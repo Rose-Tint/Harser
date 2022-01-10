@@ -1,6 +1,5 @@
 module Char where
 
-import qualified Data.Text as T
 import Data.Char
 
 import Parser
@@ -14,37 +13,102 @@ noneOf :: [Char] -> Parser Char
 noneOf cs = satisfy (\c -> not (elem c cs))
 
 
--- :: Parser Char
+anyChar :: Parser Char
 anyChar = satisfy (\_ -> True)
+
+
+space :: Parser Char
 space = satisfy isSpace
+
+
+newline :: Parser Char
 newline = satisfy (== '\n')
+
+
+symbol :: Parser Char
+symbol = satisfy isSymbol
+
+
+letter :: Parser Char
 letter = satisfy isAlpha
+
+
+numeric :: Parser Char
 numeric = satisfy isNumber
+
+
+alnum :: Parser Char
 alnum = satisfy isAlphaNum
+
+
+floatChar :: Parser Char
 floatChar = oneOf "0123456789."
+
+
+digit :: Parser Char
 digit = oneOf "0123456789"
+
+
+hexChar :: Parser Char
 hexChar = oneOf "0123456789abcdef"
 
 
--- Parser String
+line :: Parser String
+line = zeroOrMore $ satisfy (/= '\n')
+
+
+skipws :: Parser String
+skipws = zeroOrMore space
+
+
+spaces :: Parser String
+spaces = oneOrMore space
+
+
+word :: Parser String
 word = oneOrMore letter
+
+
+number :: Parser String
 number = oneOrMore digit
+
+
+hexNumber :: Parser String
 hexNumber = oneOrMore hexChar
+
+
+float :: Parser String
 float = oneOrMore floatChar
+
+
+wrapped :: String -> Parser a -> String -> Parser a
+wrapped ls p rs = do
+    _ <- string ls
+    x <- p
+    _ <- string rs
+    return x
 
 
 {- %%%%% COMMON USES FOR CONVENIENCE %%%%% -}
 
 
+lexeme :: Parser a -> Parser a
+lexeme p = do
+    x <- p
+    _ <- spaces
+    return x
+
+
 parens :: Parser a -> Parser a
-parens p = inner <$> char '(' <*> p <*> char ')'
-    where inner _ a _ = a
+parens p = do
+    _ <- char '('
+    x <- p
+    _ <- char ')'
+    return x
 
 
 varName :: Parser String
-varName = Parser (\s -> case (runParser (zeroOrOne varChar) s) of
-        (s', Success Nothing)  -> runParser (oneOrMore alnum) s'
-        (s', Success (Just c)) ->
-            let (s'', (Success cs)) = runParser (zeroOrMore varChar) s'
-            in (s'', return (c:cs)))
-                where varChar = satisfy (\c -> isAlphaNum c || c == '_')
+varName = do
+    c  <- satisfy (\c -> isAlpha c || c == '_')
+    cs <- zeroOrMore $ satisfy (\c' -> isAlphaNum c' || c' == '_')
+    return (c:cs)

@@ -21,8 +21,9 @@ newtype Parser a = Parser {
 
 
 instance Functor Parser where
-    fmap f (Parser a) = Parser (\s ->
-        let (s', a') = a s in (s', fmap f a'))
+    fmap f (Parser a) = Parser (\s -> case a s of
+        (s', Failure e) -> (s', Failure e)
+        (s', Success x) -> (s', Success (f x)))
 
 
 instance Functor StreamState where
