@@ -5,6 +5,15 @@ import Data.Char
 import Parser
 
 
+char :: Char -> Parser Char
+char c = satisfy (== c)
+
+
+string :: String -> Parser String
+string [] = return []
+string (c:cs) = (:) <$> char c <*> string cs
+
+
 oneOf :: [Char] -> Parser Char
 oneOf cs = satisfy (`elem` cs)
 
@@ -81,14 +90,6 @@ float :: Parser String
 float = oneOrMore floatChar
 
 
-wrapped :: String -> Parser a -> String -> Parser a
-wrapped ls p rs = do
-    _ <- string ls
-    x <- p
-    _ <- string rs
-    return x
-
-
 {- %%%%% COMMON USES FOR CONVENIENCE %%%%% -}
 
 
@@ -102,7 +103,9 @@ lexeme p = do
 parens :: Parser a -> Parser a
 parens p = do
     _ <- char '('
+    _ <- skipws
     x <- p
+    _ <- skipws
     _ <- char ')'
     return x
 
