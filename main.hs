@@ -1,32 +1,53 @@
 module Main where
 
-import Text.Printf
-import System.Exit
-import System.IO
-import Control.Applicative
+import Prelude hiding (getLine)
 
-import Parser
-import Char
+import Control.Applicative
+import qualified Data.Text
+import Data.Text.IO (getLine)
+import System.IO hiding (getLine)
+import System.Exit
+import Text.Printf
+
+import Harser.Char
+import Harser.Combinators
+import Harser.Parser
+
+
+{- EXAMPLE: SIMPLE CALCULATOR -}
 
 
 data Expr
-    = Value Integer
-    | Func ([Expr] -> Integer) [Expr]
+    = Num Integer
+    | Add [Expr]
+    | Sub [Expr]
+    | Mul [Expr]
+    | Div [Expr]
     | Parens Expr
 
 
-input :: IO String
+input :: IO Data.Text.Text
 input = putStr "~>>" >> hFlush stdout >> getLine
+
+
+output :: StreamState Expr -> IO ()
+output st = case st of
+    Failure e -> printf "!>> %s\n" e
+    Success e -> printf "=>> %s\n" (show $ eval e)
 
 
 eval :: Expr -> Integer
 eval (Num n) = n
-eval (Func f l) = f l
 eval (Parens e) = eval e
+eval (Add (x:xs)) = foldr (+) (eval x) (fmap eval xs)
+eval (Sub (x:xs)) = foldr (-) (eval x) (fmap eval xs)
+eval (Mul (x:xs)) = foldr (*) (eval x) (fmap eval xs)
+eval (Div (x:xs)) = foldr (div) (eval x) (fmap eval xs)
+eval _ = error "no arguments"
 
 
 expr :: Parser Expr
-expr = try add <|> try num <|> parens expr
+expr = try oper <|> try func <|> term
 
 
 term :: Parser Expr
@@ -37,21 +58,32 @@ num :: Parser Expr
 num = (fmap (Num . read) number) !> "NaN"
 
 
-addOp :: Parser Expr
-addOp = do
-    args <- sepBy (wrapped skipws (char '+')) term
-    return (Func (sum . fmap eval) args) !> "not add"
+oper :: Parser Expr
+oper = do
+    x <- term
+    _ <- skipws
+    op <- oneOf "+-*/"
+    _ <- skipws
+    y <- term
+    return $ case op of
+        '+' -> Add [x, y]
+        '-' -> Sub [x, y]
+        '*' -> Mul [x, y]
+        '/' -> Div [x, y]
+        c   -> error ("somehow did not match: " ++ [c])
 
 
-addFn :: Parser Expr
-addFn = do
-    _ <- lexeme $ string "add"
+func :: Parser Expr
+func = do
+    fn <- choose (fmap string ["add", "sub", "mul", "div"])
+    _ <- spaces
     args <- sepBy spaces term
-    return (Func (sum . fmap eval) args) !> "not (+)"
-
-
-add :: Parser Expr
-add = try addOp <|> addFn
+    return $ case fn of
+        "add" -> Add args
+        "sub" -> Sub args
+        "mul" -> Mul args
+        "div" -> Div args
+        s     -> error ("somehow did not match: " ++ s)
 
 
 main :: IO ()
@@ -63,10 +95,8 @@ main = do
 loop :: IO ()
 loop = do
     s <- input
-    if s == "exit" then
+    if s == Data.Text.pack "exit" then
         exitSuccess
     else
-        case parseStr expr s of
-            Failure e -> printf "!>> %s\n" e
-            Success e -> printf "=>> %d\n" (eval e)
+        output (parse expr s)
     loop

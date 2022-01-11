@@ -1,7 +1,8 @@
-module Char where
+module Harser.Char where
 
 import Data.Char
 
+import Combinators
 import Parser
 
 
