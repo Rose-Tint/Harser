@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Examples.CalcInterpreter where
 
 import Prelude hiding (getLine)
@@ -12,6 +14,7 @@ import Text.Printf
 import Harser.Char
 import Harser.Combinators
 import Harser.Parser
+import Harser.Stream
 
 
 {- EXAMPLE: SIMPLE CALCULATOR -}
@@ -30,7 +33,7 @@ input :: IO Data.Text.Text
 input = putStr "~>>" >> hFlush stdout >> getLine
 
 
-output :: StreamState Expr -> IO ()
+output :: ParseState Expr -> IO ()
 output st = case st of
     Failure e -> printf "!>> %s\n" e
     Success e -> printf "=>> %s\n" (show $ eval e)
@@ -46,19 +49,19 @@ eval (Div (x:xs)) = foldl (div) (eval x) (fmap eval xs)
 eval _ = error "no arguments"
 
 
-expr :: Parser Expr
+expr :: (Stream s Char) => Parser s Expr
 expr = oper <?> func <?> term
 
 
-term :: Parser Expr
+term :: (Stream s Char) => Parser s Expr
 term = try num <?> parens expr
 
 
-num :: Parser Expr
+num :: (Stream s Char) => Parser s Expr
 num = (fmap (Num . read) number) !> "NaN"
 
 
-oper :: Parser Expr
+oper :: (Stream s Char) => Parser s Expr
 oper = do
     x <- term
     _ <- skipws
@@ -73,7 +76,7 @@ oper = do
         c   -> error ("somehow did not match: " ++ [c])
 
 
-func :: Parser Expr
+func :: (Stream s Char) => Parser s Expr
 func = do
     fn <- choose (fmap string ["add", "sub", "mul", "div"])
     _ <- spaces

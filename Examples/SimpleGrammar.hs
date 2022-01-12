@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Examples.SimpleGrammar where
 
 import Prelude hiding (exp, getLine)
@@ -10,6 +12,7 @@ import System.Exit (exitSuccess)
 import Harser.Char
 import Harser.Combinators
 import Harser.Parser
+import Harser.Stream
 
 
 -- https://stackoverflow.com/questions/12712149/haskell-parser-to-ast-data-type-assignment
@@ -51,11 +54,11 @@ instance Show AST where
             -- impl _ _ = error "Invalid AST"
 
 
-expr :: Parser AST
+expr :: (Stream s Char) => Parser s AST
 expr = oper <?> letE <?> term
 
 
-letE :: Parser AST
+letE :: (Stream s Char) => Parser s AST
 letE = do
     _ <- lexeme $ string "let"
     var <- letter
@@ -66,7 +69,7 @@ letE = do
     return (Let var eq exp)
 
 
-add :: Parser AST
+add :: (Stream s Char) => Parser s AST
 add = do
     x <- term <* skipws
     _ <- char '+'
@@ -74,7 +77,7 @@ add = do
     return (Add x y)
 
 
-sub :: Parser AST
+sub :: (Stream s Char) => Parser s AST
 sub = do
     x <- term <* skipws
     _ <- char '-'
@@ -82,7 +85,7 @@ sub = do
     return (Sub x y)
 
 
-mul :: Parser AST
+mul :: (Stream s Char) => Parser s AST
 mul = do
     x <- term <* skipws
     _ <- char '*'
@@ -90,15 +93,15 @@ mul = do
     return (Mul x y)
 
 
-term :: Parser AST
+term :: (Stream s Char) => Parser s AST
 term = int <?> (fmap Var letter) <?> (fmap Parens (parens oper))
 
 
-oper :: Parser AST
+oper :: (Stream s Char) => Parser s AST
 oper = add <?> sub <?> mul
 
 
-int :: Parser AST
+int :: (Stream s Char) => Parser s AST
 int = fmap (Num . read) (oneOrMore digit)
 
 

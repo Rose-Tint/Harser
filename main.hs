@@ -1,17 +1,12 @@
 module Main where
 
-import Harser.Char ()
-import Harser.Combinators ()
-import Harser.Parser ()
-import Harser.Stream ()
-
 import System.IO (hSetEcho, stdin)
 
--- import Examples.CalcInterpreter ()
--- import Examples.SimpleGrammar (mainLoop)
+import Examples.CalcInterpreter (mainLoop)
+import Examples.SimpleGrammar ()
 
 
 main :: IO ()
 main = do
     hSetEcho stdin False
-    -- mainLoop
+    mainLoop

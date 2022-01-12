@@ -42,7 +42,7 @@ optional (Parser a) = Parser (\s -> case a s of
 
 
 -- | 1+
-sepBy :: Parser s s -> Parser s a -> Parser s [a]
+sepBy :: Parser s a -> Parser s b -> Parser s [b]
 sepBy s p = do
     x <- p
     xs <- zeroOrMore (s *> p)
@@ -50,7 +50,7 @@ sepBy s p = do
 
 
 -- | 0+
-sepBy' :: Parser s s -> Parser s a -> Parser s [a]
+sepBy' :: Parser s a -> Parser s b -> Parser s [b]
 sepBy' s p = sepBy s p <|> pure []
 
 
@@ -77,7 +77,7 @@ skipn n p@(Parser a) = Parser (\s -> case a s of
 
 
 choose :: [Parser s a] -> Parser s a
-choose ps = foldr (<|>) empty (fmap try ps)
+choose ps = foldr (<?>) empty (fmap try ps)
 
 
 wrapped :: Parser s a -> Parser s b -> Parser s b
