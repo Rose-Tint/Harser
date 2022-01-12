@@ -1,6 +1,7 @@
 module Harser.Parser where
 
 import Control.Applicative
+import Control.Monad.Fail
 import qualified Data.Text
 
 
@@ -43,8 +44,9 @@ infix 8 <!
 infix 8 !>
 
 
-runParser :: Parser a -> Stream -> (Stream, StreamState a)
-runParser (Parser a) s = a s
+(<?>) :: Parser a -> Parser a -> Parser a
+lp <?> rp = try lp <|> rp
+infixl 7 <?>
 
 
 failure :: String -> Parser a

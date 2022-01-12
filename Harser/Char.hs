@@ -2,8 +2,8 @@ module Harser.Char where
 
 import Data.Char
 
-import Combinators
-import Parser
+import Harser.Combinators
+import Harser.Parser
 
 
 char :: Char -> Parser Char

@@ -2,7 +2,7 @@ module Harser.Combinators where
 
 import Control.Applicative
 
-import Parser
+import Harser.Parser
 
 
 zeroOrOne :: Parser a -> Parser (Maybe a)
@@ -45,7 +45,7 @@ optional (Parser a) = Parser (\s -> case a s of
 sepBy :: Parser s -> Parser a -> Parser [a]
 sepBy s p = do
     x <- p
-    xs <- zeroOrOne (s *> p)
+    xs <- zeroOrMore (s *> p)
     return (x:xs)
 
 
@@ -55,7 +55,7 @@ sepBy' s p = sepBy s p <|> pure []
 
 
 count :: Int -> Parser a -> Parser [a]
-count 0 p = return []
+count 0 _ = return []
 count n p = do
     x <- p
     xs <- count (n - 1) p
@@ -65,19 +65,19 @@ count n p = do
 skip :: Parser a -> Parser ()
 skip p@(Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success ())
-    (s', Success _) -> runParser (skip p) s'
+    (s', Success _) -> (unParser (skip p)) s')
 
 
 skipn :: Int -> Parser a -> Parser ()
-skipn 0 p = Parser (\s -> let (s', _) = a s
-    in (s', _) -> (s', Success ())
+skipn 0 (Parser a) = Parser (\s -> let (s', _) = a s
+    in (s', Success ()))
 skipn n p@(Parser a) = Parser (\s -> case a s of
     (_, Failure _) -> (s, Success ())
-    (_, Success _) -> skipn (n - 1) p
+    (_, Success _) -> (unParser (skipn (n - 1) p)) s)
 
 
 choose :: [Parser a] -> Parser a
-choose ps = foldr (<|>) empty ps
+choose ps = foldr (<|>) empty (fmap try ps)
 
 
 wrapped :: Parser a -> Parser b -> Parser b
