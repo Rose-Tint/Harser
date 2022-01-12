@@ -5,6 +5,11 @@ import Control.Applicative
 import Harser.Parser
 
 
+(<?>) :: Parser s a -> Parser s a -> Parser s a
+lp <?> rp = try lp <|> rp
+infixl 7 <?>
+
+
 zeroOrOne :: Parser s a -> Parser s (Maybe a)
 zeroOrOne (Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success Nothing)

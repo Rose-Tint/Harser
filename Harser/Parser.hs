@@ -20,6 +20,14 @@ newtype Parser s a = Parser {
 }
 
 
+runParser :: Parser s a -> s -> (s, ParseState a)
+runParser (Parser a) = a
+
+
+getInput :: Parser s a
+getInput = Parser (\s -> (s, Success s))
+
+
 -- | replaces the error message
 (<!>) :: Parser s a -> ParseError -> Parser s a
 (Parser a) <!> e = Parser (\s -> case a s of
@@ -44,11 +52,6 @@ infix 8 <!
 infix 8 !>
 
 
-(<?>) :: Parser s a -> Parser s a -> Parser s a
-lp <?> rp = try lp <|> rp
-infixl 7 <?>
-
-
 satisfy :: (Stream s t) => (t -> Bool) -> Parser s t
 satisfy f = Parser (\s -> case uncons s of
     Nothing      -> (s, Failure "empty")
@@ -65,24 +68,12 @@ try (Parser f) = Parser (\s -> case f s of
     (s', Success x) -> (s', Success x))
 
 
-parse :: (Stream s t) => Parser s a -> s -> ParseState a
+exactly :: (Eq a, Stream s t) => a -> Parser s a
+exactly a = satisfy (== a)
+
+
+parse :: Parser s a -> s -> ParseState a
 parse (Parser a) = snd . a
-
-
-prefix :: Parser s a -> Parser s a -> Parser s a
-prefix s p = s *> p
-
-
-maybePrefix :: Parser s a -> Parser s a -> Parser s a
-maybePrefix s p = try s *> p
-
-
-suffix :: Parser s a -> Parser s a -> Parser s a
-suffix p s = p <* s
-
-
-maybeSuffix :: Parser s a -> Parser s a -> Parser s a
-maybeSuffix p s = p <* try s
 
 
 instance Functor (Parser s) where
