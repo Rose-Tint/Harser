@@ -2,26 +2,26 @@ module Harser.Parser where
 
 import Control.Applicative
 import Control.Monad.Fail
-import qualified Data.Text
+
+import Harser.Stream
 
 
 type ParseError = String
-type Stream = Data.Text.Text
 
 
-data StreamState a
+data ParseState a
     = Failure ParseError
     | Success a
     deriving (Show, Eq)
 
 
-newtype Parser a = Parser {
-    unParser :: Stream -> (Stream, StreamState a)
+newtype Parser s a = Parser {
+    unParser :: s -> (s, ParseState a)
 }
 
 
 -- | replaces the error message
-(<!>) :: Parser a -> ParseError -> Parser a
+(<!>) :: Parser s a -> ParseError -> Parser s a
 (Parser a) <!> e = Parser (\s -> case a s of
     (s', Failure _) -> (s', Failure e)
     (s', Success x) -> (s', Success x))
@@ -29,7 +29,7 @@ infix 8 <!>
 
 
 -- | prepends to the error message
-(<!) :: Parser a -> ParseError -> Parser a
+(<!) :: Parser s a -> ParseError -> Parser s a
 (Parser a) <! e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e ++ e'))
     (s', Success x)  -> (s', Success x))
@@ -37,75 +37,66 @@ infix 8 <!
 
 
 -- | appends to the error message
-(!>) :: Parser a -> ParseError -> Parser a
+(!>) :: Parser s a -> ParseError -> Parser s a
 (Parser a) !> e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e' ++ e))
     (s', Success x) -> (s', Success x))
 infix 8 !>
 
 
-(<?>) :: Parser a -> Parser a -> Parser a
+(<?>) :: Parser s a -> Parser s a -> Parser s a
 lp <?> rp = try lp <|> rp
 infixl 7 <?>
 
 
-failure :: String -> Parser a
-failure e = Parser (\s -> (s, Failure e))
-
-
-satisfy :: (Char -> Bool) -> Parser Char
-satisfy f = Parser (\s -> (Data.Text.tail s,
-    if Data.Text.null s then
-        Failure "empty"
-    else let c = Data.Text.head s
-        in if f c then
-            Success c
-        else Failure ("did not satisfy: '" ++ (c:"'"))))
+satisfy :: (Stream s t) => (t -> Bool) -> Parser s t
+satisfy f = Parser (\s -> case uncons s of
+    Nothing      -> (s, Failure "empty")
+    Just (t, ts) -> if f t then
+            (ts, Success t)
+        else
+            (ts, Failure "did not satisfy"))
 
 
 -- | restores stream to previous state on failure
-try :: Parser a -> Parser a
+try :: Parser s a -> Parser s a
 try (Parser f) = Parser (\s -> case f s of
     (_, Failure e)  -> (s, Failure e)
     (s', Success x) -> (s', Success x))
 
 
-parseStr :: Parser a -> String -> StreamState a
-parseStr p s = parse p (Data.Text.pack s)
-
-
-parse :: Parser a -> Stream -> StreamState a
+parse :: (Stream s t) => Parser s a -> s -> ParseState a
 parse (Parser a) = snd . a
 
 
-prefix :: Parser a -> Parser a -> Parser a
+prefix :: Parser s a -> Parser s a -> Parser s a
 prefix s p = s *> p
 
 
-maybePrefix :: Parser a -> Parser a -> Parser a
+maybePrefix :: Parser s a -> Parser s a -> Parser s a
 maybePrefix s p = try s *> p
 
 
-suffix :: Parser a -> Parser a -> Parser a
+suffix :: Parser s a -> Parser s a -> Parser s a
 suffix p s = p <* s
 
 
-maybeSuffix :: Parser a -> Parser a -> Parser a
+maybeSuffix :: Parser s a -> Parser s a -> Parser s a
 maybeSuffix p s = p <* try s
 
 
-instance Functor Parser where
+instance Functor (Parser s) where
     fmap f (Parser a) = Parser (\s -> case a s of
         (s', Failure e) -> (s', Failure e)
         (s', Success x) -> (s', Success (f x)))
 
 
-instance Functor StreamState where
+instance Functor ParseState where
     fmap f (Success x) = Success (f x)
     fmap _ (Failure e) = Failure e
 
 
-instance Applicative Parser where
+instance Applicative (Parser s) where
     pure a = Parser (\s -> (s, Success a))
     Parser f <*> Parser x = Parser (\s -> case f s of
         (s', Failure e)  -> (s', Failure e)
@@ -114,7 +105,7 @@ instance Applicative Parser where
             (s'', Success x') -> (s'', Success (f' x')))
 
 
-instance Applicative StreamState where
+instance Applicative ParseState where
     pure a = Success a
     Success f <*> Success x = Success (f x)
     Failure e0 <*> Failure e1 = Failure ("left: " ++ e0
@@ -123,7 +114,7 @@ instance Applicative StreamState where
     _ <*> Failure e = Failure e
 
 
-instance Alternative Parser where
+instance Alternative (Parser s) where
     empty = Parser (\s -> (s, Failure "empty"))
     Parser lf <|> Parser rf = Parser (\s -> case lf s of
         (s', Failure _) -> rf s'
@@ -132,7 +123,7 @@ instance Alternative Parser where
     -- some = zeroOrMore
 
 
-instance Monad Parser where
+instance Monad (Parser s) where
     return = pure
     Parser a >>= f = Parser (\s -> case a s of
         (s', Failure e) -> (s', Failure e)
@@ -141,14 +132,14 @@ instance Monad Parser where
             (s'', Success x') -> (s'', Success x'))
 
 
-instance Monad StreamState where
+instance Monad ParseState where
     Success a >>= f = f a
     Failure e >>= _ = Failure e
 
 
-instance MonadFail Parser where
+instance MonadFail (Parser s) where
     fail e = Parser (\s -> (s, Failure e))
 
 
-instance MonadFail StreamState where
+instance MonadFail ParseState where
     fail s = Failure s
