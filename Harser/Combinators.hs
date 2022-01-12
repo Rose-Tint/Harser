@@ -3,6 +3,7 @@ module Harser.Combinators where
 import Control.Applicative
 
 import Harser.Parser
+import Harser.Stream
 
 
 zeroOrOne :: Parser s u a -> Parser s u (Maybe a)
@@ -74,6 +75,26 @@ skipn 0 (Parser a) = Parser (\s -> let (s', _) = a s
 skipn n p@(Parser a) = Parser (\s -> case a s of
     (_, Failure _) -> (s, Success ())
     (_, Success _) -> (unParser (skipn (n - 1) p)) s)
+
+
+parse :: (Stream s t) => Parser s u a -> s -> ParseState a
+parse (Parser a) = snd . a
+
+
+prefix :: Parser s u a -> Parser s u a -> Parser s u a
+prefix s p = s *> p
+
+
+maybePrefix :: Parser s u a -> Parser s u a -> Parser s u a
+maybePrefix s p = try s *> p
+
+
+suffix :: Parser s u a -> Parser s u a -> Parser s u a
+suffix p s = p <* s
+
+
+maybeSuffix :: Parser s u a -> Parser s u a -> Parser s u a
+maybeSuffix p s = p <* try s
 
 
 choose :: [Parser s u a] -> Parser s u a

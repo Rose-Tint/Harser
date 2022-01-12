@@ -15,38 +15,41 @@ data ParseState a
     deriving (Show, Eq)
 
 
-newtype Parser s u a = Parser {
-    unParser :: s -> (s, ParseState a)
-}
+newtype Parser s u a = Parser { unParser :: s -> (s, ParseState a) }
 
 
+runParser :: Parser s u a -> s -> (s, ParseState a)
+runParser (Parser a) = a
+
+
+infix 8 <!>
 -- | replaces the error message
 (<!>) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) <!> e = Parser (\s -> case a s of
     (s', Failure _) -> (s', Failure e)
     (s', Success x) -> (s', Success x))
-infix 8 <!>
 
 
+infix 8 <!
 -- | prepends to the error message
 (<!) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) <! e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e ++ e'))
     (s', Success x)  -> (s', Success x))
-infix 8 <!
 
 
+infix 8 !>
 -- | appends to the error message
 (!>) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) !> e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e' ++ e))
     (s', Success x) -> (s', Success x))
-infix 8 !>
 
 
+infixr 7 <?>
+-- | like <|> but trys left arg. <?> is right associative
 (<?>) :: Parser s u a -> Parser s u a -> Parser s u a
 lp <?> rp = try lp <|> rp
-infixl 7 <?>
 
 
 satisfy :: (Stream s t) => (t -> Bool) -> Parser s u t
@@ -63,26 +66,6 @@ try :: Parser s u a -> Parser s u a
 try (Parser f) = Parser (\s -> case f s of
     (_, Failure e)  -> (s, Failure e)
     (s', Success x) -> (s', Success x))
-
-
-parse :: (Stream s t) => Parser s u a -> s -> ParseState a
-parse (Parser a) = snd . a
-
-
-prefix :: Parser s u a -> Parser s u a -> Parser s u a
-prefix s p = s *> p
-
-
-maybePrefix :: Parser s u a -> Parser s u a -> Parser s u a
-maybePrefix s p = try s *> p
-
-
-suffix :: Parser s u a -> Parser s u a -> Parser s u a
-suffix p s = p <* s
-
-
-maybeSuffix :: Parser s u a -> Parser s u a -> Parser s u a
-maybeSuffix p s = p <* try s
 
 
 instance Functor (Parser s u) where
