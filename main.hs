@@ -8,7 +8,7 @@ import System.IO hiding (getLine)
 import System.Exit
 
 import Harser.Parser
-import Examples.Calculator (eval, run)
+import Examples.Calculator (run)
 
 
 input :: IO Text

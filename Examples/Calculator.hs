@@ -22,6 +22,10 @@ data Expr
     | Parens Expr
 
 
+run :: Text -> ParseState Integer
+run t = fmap eval (parse expr t ())
+
+
 eval :: Expr -> Integer
 eval (Num n) = n
 eval (Parens e) = eval e
@@ -70,7 +74,3 @@ func = do
         "mul" -> Mul args
         "div" -> Div args
         s     -> error ("somehow did not match: " ++ s)
-
-
-run :: Text -> ParseState Expr
-run t = fmap eval (parse expr t ())
