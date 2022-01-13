@@ -26,36 +26,48 @@ newtype Parser s u a = Parser {
 }
 
 
+runP :: Parser s u a -> State s u -> (State s u, ParseState a)
+runP p st = (unParser p) st
+
+
 getInput :: Parser s u s
-getInput = Parser (\s -> (s, Success (stateStream s)))
+getInput = Parser (\s -> (s, pure (stateStream s)))
 
 
 getState :: Parser s u u
-getState = Parser (\s -> (s, Success (stateUser s)))
+getState = Parser (\s -> (s, pure (stateUser s)))
 
 
+setState :: u -> Parser s u ()
+setState u = Parser (\(State ss _) -> (State ss u, pure ()))
+
+
+modifyState :: (u -> u) -> Parser s u ()
+modifyState f = Parser (\(State s u) -> (State s (f u), pure ()))
+
+
+infix 8 <!>
 -- | replaces the error message
 (<!>) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) <!> e = Parser (\s -> case a s of
     (s', Failure _) -> (s', Failure e)
     (s', Success x) -> (s', Success x))
-infix 8 <!>
 
 
+infix 8 <!
 -- | prepends to the error message
 (<!) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) <! e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e ++ e'))
     (s', Success x)  -> (s', Success x))
-infix 8 <!
 
 
+infix 8 !>
 -- | appends to the error message
 (!>) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) !> e = Parser (\s -> case a s of
     (s', Failure e') -> (s', Failure (e' ++ e))
     (s', Success x) -> (s', Success x))
-infix 8 !>
 
 
 -- | i dont think this is right
@@ -114,6 +126,18 @@ instance Alternative (Parser s u) where
     Parser lf <|> Parser rf = Parser (\s -> case lf s of
         (s', Failure _) -> rf s'
         (s', Success x) -> (s', Success x))
+    many (Parser f) = Parser fn where
+        fn s = case f s of
+            (_, Failure _)  -> (s, Success [])
+            (s', Success a) -> case fn s' of 
+                (s'', Failure e) -> (s'', Failure e)
+                (s'', Success as) -> (s'', Success (a:as))
+    some (Parser f) = Parser (\s -> case f s of
+        (s', Failure e) -> (s', Failure e)
+        (s', Success a) -> let (Parser f') = many (Parser f)
+            in case f' s' of
+                (s'', Failure e)  -> (s'', Failure e)
+                (s'', Success as) -> (s'', Success (a:as)))
 
 
 instance Alternative ParseState where
@@ -128,7 +152,7 @@ instance Monad (Parser s u) where
     (>>) = (*>)
     Parser a >>= f = Parser (\s -> case a s of
         (s', Failure e) -> (s', Failure e)
-        (s', Success x) -> (unParser (f x)) s')
+        (s', Success x) -> runP (f x) s')
 
 
 instance Monad ParseState where
