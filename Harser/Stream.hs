@@ -1,7 +1,9 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances      #-}
 
-module Harser.Stream where
+module Harser.Stream (
+    Stream(..)
+) where
 
 import qualified Data.Text as T (Text, uncons)
 

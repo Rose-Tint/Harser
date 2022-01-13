@@ -1,8 +1,25 @@
-module Harser.Combinators where
+module Harser.Combinators (
+    (<?>),
+    zeroOrOne,
+    zeroOrMore,
+    oneOrMore,
+    option,
+    sepBy, sepBy',
+    atLeast,
+    atMost,
+    count,
+    skip,
+    skips, skips',
+    skipn,
+    choose, choose',
+    select, select',
+    wrap,
+    between
+) where
 
-import Control.Applicative
+import Control.Applicative (Alternative(..))
 
-import Harser.Parser
+import Harser.Parser (Parser(..), ParseState(..), try, runP)
 
 
 infixl 7 <?>
@@ -78,9 +95,23 @@ count n p = do
 
 
 skip :: Parser s u a -> Parser s u ()
-skip p@(Parser a) = Parser (\s -> case a s of
+skip (Parser a) = Parser (\s -> case a s of
+    (s', Failure e) -> (s', Failure e)
+    (s', Success _) -> (s', Success ()))
+
+
+-- | 0+
+skips :: Parser s u a -> Parser s u ()
+skips p@(Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success ())
-    (s', Success _) -> (unParser (skip p)) s')
+    (s', Success _) -> runP (skips p) s')
+
+
+-- | 1+
+skips' :: Parser s u a -> Parser s u ()
+skips' p@(Parser a) = Parser (\s -> case a s of
+    (s', Failure e) -> (s', Failure e)
+    (s', Success _) -> runP (skips p) s')
 
 
 skipn :: Int -> Parser s u a -> Parser s u ()
@@ -88,7 +119,7 @@ skipn 0 (Parser a) = Parser (\s ->
     let (s', _) = a s in (s', Success ()))
 skipn n p@(Parser a) = Parser (\s -> case a s of
     (_, Failure _) -> (s, Success ())
-    (_, Success _) -> (unParser (skipn (n - 1) p)) s)
+    (_, Success _) -> runP (skipn (n - 1) p) s)
 
 
 choose :: (Foldable l) => l (Parser s u a) -> Parser s u a

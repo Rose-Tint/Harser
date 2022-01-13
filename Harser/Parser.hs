@@ -1,9 +1,24 @@
-module Harser.Parser where
+module Harser.Parser (
+    ParseError,
+    ParseState(..),
+    State(..),
+    Parser(..),
+    runP,
+    getInput,
+    getState,
+    putState,
+    modifyState,
+    (<!>), (<!), (!>),
+    satisfy,
+    try,
+    exactly,
+    parse
+) where
 
-import Control.Applicative
-import Control.Monad.Fail
+import Control.Applicative (Alternative(..))
+import Control.Monad.Fail (MonadFail(..))
 
-import Harser.Stream
+import Harser.Stream (Stream(..))
 
 
 type ParseError = String
@@ -17,7 +32,7 @@ data ParseState a
 
 data State s u = State {
     stateStream :: s,
-    stateUser :: u
+    stateUser :: !u
 }
 
 
@@ -38,8 +53,8 @@ getState :: Parser s u u
 getState = Parser (\s -> (s, pure (stateUser s)))
 
 
-setState :: u -> Parser s u ()
-setState u = Parser (\(State ss _) -> (State ss u, pure ()))
+putState :: u -> Parser s u ()
+putState u = Parser (\(State ss _) -> (State ss u, pure ()))
 
 
 modifyState :: (u -> u) -> Parser s u ()
