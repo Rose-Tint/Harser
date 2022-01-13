@@ -15,7 +15,6 @@ class Stream s t | s -> t where
     rest = fmap snd . uncons
 
 
-
 instance Stream [t] t where
     uncons [] = Nothing
     uncons (t:ts) = Just (t, ts)

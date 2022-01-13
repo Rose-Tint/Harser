@@ -5,61 +5,71 @@ import Control.Applicative
 import Harser.Parser
 
 
-(<?>) :: Parser s a -> Parser s a -> Parser s a
-lp <?> rp = try lp <|> rp
 infixl 7 <?>
+-- | like <|>, but "try"s the left parser
+(<?>) :: Parser s u a -> Parser s u a -> Parser s u a
+lp <?> rp = try lp <|> rp
 
 
-zeroOrOne :: Parser s a -> Parser s (Maybe a)
+zeroOrOne :: Parser s u a -> Parser s u (Maybe a)
 zeroOrOne (Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success Nothing)
-    (s', Success a') -> (s', Success (Just a')))
+    (s', Success x) -> (s', Success (Just x)))
 
 
-zeroOrMore :: Parser s a -> Parser s [a]
-zeroOrMore (Parser f) = Parser go where
-    go s = case f s of
-        (_, Failure _)  -> (s, Success [])
-        (s', Success a) -> case go s' of 
-            (s'', Failure e) -> (s'', Failure e)
-            (s'', Success as) -> (s'', Success (a:as))
+zeroOrMore :: Parser s u a -> Parser s u [a]
+zeroOrMore = many
 
 
-oneOrMore :: Parser s a -> Parser s [a]
-oneOrMore (Parser f) = Parser (\s -> case f s of
-    (s', Failure e) -> (s', Failure e)
-    (s', Success a) -> let (Parser f') = zeroOrMore (Parser f)
-        in case f' s' of
-            (s'', Failure e)  -> (s'', Failure e)
-            (s'', Success as) -> (s'', Success (a:as)))
+oneOrMore :: Parser s u a -> Parser s u [a]
+oneOrMore = some
 
 
-option :: Parser s a -> a -> Parser s a
-option (Parser a) o = Parser (\s -> case a s of
-    (s', Failure _) -> (s', Success o)
+-- | takes a parser and an default value. upon failure,
+-- | succeeds with the default value.
+option :: Parser s u a -> a -> Parser s u a
+option (Parser a) d = Parser (\s -> case a s of
+    (s', Failure _) -> (s', Success d)
     (s', Success x) -> (s', Success x))
 
 
-optional :: Parser s a -> Parser s ()
-optional (Parser a) = Parser (\s -> case a s of
-    (s', Failure _) -> (s', Success ())
-    (s', Success _) -> (s', Success ()))
-
-
 -- | 1+
-sepBy :: Parser s a -> Parser s b -> Parser s [b]
-sepBy s p = do
-    x <- p
-    xs <- zeroOrMore (s *> p)
-    return (x:xs)
+sepBy :: Parser s u a -> Parser s u b -> Parser s u [b]
+sepBy s p = fmap (:) p <*> zeroOrMore (s *> p)
+    -- do
+    -- x <- p
+    -- xs <- zeroOrMore (s *> p)
+    -- return (x:xs)
 
 
 -- | 0+
-sepBy' :: Parser s a -> Parser s b -> Parser s [b]
+sepBy' :: Parser s u a -> Parser s u b -> Parser s u [b]
 sepBy' s p = sepBy s p <|> pure []
 
 
-count :: Int -> Parser s a -> Parser s [a]
+atLeast :: Int -> Parser s u a -> Parser s u [a]
+atLeast 0 p = zeroOrMore p
+atLeast 1 p = oneOrMore p
+atLeast n p = do
+    -- im sure there is an easier way, but it
+    -- would look as bad as atMost
+    firsts <- count n p
+    rest <- zeroOrMore p
+    return (firsts ++ rest)
+
+
+atMost :: Int -> Parser s u a -> Parser s u [a]
+atMost 0 _ = pure []
+atMost 1 p = fmap (:[]) p
+atMost n p@(Parser a) = Parser (\s -> case a s of
+    (s', Failure _) -> (s', Success [])
+    (s', Success x) -> case (unParser nxt) s' of
+        (s'', Failure _)  -> (s'', Success [x])
+        (s'', Success xs) -> (s'', Success (x:xs)))
+            where nxt = atMost (n - 1) p
+
+
+count :: Int -> Parser s u a -> Parser s u [a]
 count 0 _ = return []
 count n p = do
     x <- p
@@ -67,27 +77,44 @@ count n p = do
     return (x:xs)
 
 
-skip :: Parser s a -> Parser s ()
+skip :: Parser s u a -> Parser s u ()
 skip p@(Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success ())
     (s', Success _) -> (unParser (skip p)) s')
 
 
-skipn :: Int -> Parser s a -> Parser s ()
-skipn 0 (Parser a) = Parser (\s -> let (s', _) = a s
-    in (s', Success ()))
+skipn :: Int -> Parser s u a -> Parser s u ()
+skipn 0 (Parser a) = Parser (\s ->
+    let (s', _) = a s in (s', Success ()))
 skipn n p@(Parser a) = Parser (\s -> case a s of
     (_, Failure _) -> (s, Success ())
     (_, Success _) -> (unParser (skipn (n - 1) p)) s)
 
 
-choose :: [Parser s a] -> Parser s a
-choose ps = foldr (<?>) empty (fmap try ps)
+choose :: (Foldable l) => l (Parser s u a) -> Parser s u a
+choose ps = foldr (<|>) empty ps
 
 
-wrapped :: Parser s a -> Parser s b -> Parser s b
-wrapped s p = s *> p <* s
+-- | like choose, but uses <?> instead of <|>
+choose' :: (Foldable l) => l (Parser s u a) -> Parser s u a
+choose' ps = foldr (<?>) empty ps
 
 
-between :: Parser s a -> Parser s b -> Parser s c -> Parser s b
+select :: (Functor l, Foldable l) =>
+    (a -> Parser s u a) -> l a -> Parser s u a
+select fp l = foldr (<|>) empty as
+    where as = fmap fp l
+
+
+select' :: (Functor l, Foldable l) =>
+    (a -> Parser s u a) -> l a -> Parser s u a
+select' fp l = foldr (<?>) empty as
+    where as = fmap fp l
+
+
+wrap :: Parser s u a -> Parser s u b -> Parser s u b
+wrap s p = s *> p <* s
+
+
+between :: Parser s u a -> Parser s u b -> Parser s u c -> Parser s u b
 between ls p rs = ls *> p <* rs
