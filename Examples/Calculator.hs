@@ -41,19 +41,19 @@ expr = oper <?> func <?> term
 
 
 term :: (Stream s Char) => Parser s () Expr
-term = try num <?> parens expr
+term = try num <?> parens
 
 
 num :: (Stream s Char) => Parser s () Expr
-num = (fmap (Num . read) number) !> "NaN"
+num = (fmap (Num . read) (oneOrMore digit)) !> "NaN"
 
 
 oper :: (Stream s Char) => Parser s () Expr
 oper = do
     x <- term
-    _ <- skipws
+    _ <- skipsp
     op <- oneOf "+-*/"
-    _ <- skipws
+    _ <- skipsp
     y <- oper <?> term
     return $ case op of
         '+' -> Add [x, y]
@@ -74,3 +74,11 @@ func = do
         "mul" -> Mul args
         "div" -> Div args
         s     -> error ("somehow did not match: " ++ s)
+
+
+parens :: (Stream s Char) => Parser s () Expr
+parens = do
+    _ <- char '('
+    e <- wrap skipsp expr 
+    _ <- char ')'
+    return e

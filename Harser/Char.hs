@@ -1,12 +1,29 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Harser.Char where
+module Harser.Char (
+    char,
+    string,
+    oneOf,
+    noneOf,
+    anyChar,
+    space,
+    newline,
+    symbol,
+    letter,
+    alnum,
+    oct,
+    digit,
+    hex,
+    skipsp,
+    spaces,
+    float,
+) where
 
-import Data.Char
+import Data.Char (isSpace, isSymbol, isAlpha, isAlphaNum)
 
-import Harser.Combinators
-import Harser.Parser
-import Harser.Stream
+import Harser.Combinators (oneOrMore, skips, skips')
+import Harser.Parser (Parser(..), satisfy)
+import Harser.Stream (Stream(..))
 
 
 char :: (Stream s Char) => Char -> Parser s u Char
@@ -46,69 +63,33 @@ letter :: (Stream s Char) => Parser s u Char
 letter = satisfy isAlpha
 
 
-numeric :: (Stream s Char) => Parser s u Char
-numeric = satisfy isNumber
-
-
 alnum :: (Stream s Char) => Parser s u Char
 alnum = satisfy isAlphaNum
 
 
-floatChar :: (Stream s Char) => Parser s u Char
-floatChar = oneOf "0123456789."
+oct :: (Stream s Char) => Parser s u Char
+oct = oneOf "01234567"
 
 
 digit :: (Stream s Char) => Parser s u Char
 digit = oneOf "0123456789"
 
 
-hexChar :: (Stream s Char) => Parser s u Char
-hexChar = oneOf "0123456789abcdef"
+hex :: (Stream s Char) => Parser s u Char
+hex = oneOf "0123456789abcdef"
 
 
-line :: (Stream s Char) => Parser s u String
-line = zeroOrMore $ satisfy (/= '\n')
+skipsp :: (Stream s Char) => Parser s u ()
+skipsp = skips space
 
 
-skipws :: (Stream s Char) => Parser s u String
-skipws = zeroOrMore space
-
-
-spaces :: (Stream s Char) => Parser s u String
-spaces = oneOrMore space
-
-
-word :: (Stream s Char) => Parser s u String
-word = oneOrMore letter
-
-
-number :: (Stream s Char) => Parser s u String
-number = oneOrMore digit
-
-
-hexNumber :: (Stream s Char) => Parser s u String
-hexNumber = oneOrMore hexChar
+spaces :: (Stream s Char) => Parser s u ()
+spaces = skips' space
 
 
 float :: (Stream s Char) => Parser s u String
-float = oneOrMore floatChar
-
-
-{- %%%%% COMMON USES FOR CONVENIENCE %%%%% -}
-
-
-lexeme :: (Stream s Char) => Parser s u a -> Parser s u a
-lexeme p = do
-    x <- p
-    _ <- spaces
-    return x
-
-
-parens :: (Stream s Char) => Parser s u a -> Parser s u a
-parens p = do
-    _ <- char '('
-    _ <- skipws
-    x <- p
-    _ <- skipws
-    _ <- char ')'
-    return x
+float = do
+    whole <- oneOrMore digit
+    dot <- char '.'
+    dec <- oneOrMore digit
+    return (whole ++ (dot:dec))
