@@ -3,16 +3,14 @@ module Harser.Parser (
     ParseState(..),
     State(..),
     Parser(..),
-    runP,
-    getInput,
     getState,
-    putState,
+    getStream,
+    runP,
     modifyState,
-    (<!>), (<!), (!>),
+    parse,
+    putState,
     satisfy,
-    try,
-    exactly,
-    parse
+    (<!), (<!>), (!>)
 ) where
 
 import Control.Applicative (Alternative(..))
@@ -45,8 +43,8 @@ runP :: Parser s u a -> State s u -> (State s u, ParseState a)
 runP p st = (unParser p) st
 
 
-getInput :: Parser s u s
-getInput = Parser (\s -> (s, pure (stateStream s)))
+getStream :: Parser s u s
+getStream = Parser (\s -> (s, pure (stateStream s)))
 
 
 getState :: Parser s u u
@@ -95,19 +93,8 @@ satisfy f = Parser (\s@(State ss su) -> case uncons ss of
             (State ts su, Failure "did not satisfy"))
 
 
--- | restores stream to previous state on failure
-try :: Parser s u a -> Parser s u a
-try (Parser f) = Parser (\s -> case f s of
-    (_, Failure e)  -> (s, Failure e)
-    (s', Success x) -> (s', Success x))
-
-
-exactly :: (Eq t, Stream s t) => t -> Parser s u t
-exactly t = satisfy (== t)
-
-
 parse :: Parser s u a -> s -> u -> ParseState a
-parse (Parser a) s u = snd (a (State s u))
+parse p s u = snd $ runP p (State s u)
 
 
 instance Functor (Parser s u) where

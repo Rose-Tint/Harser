@@ -1,8 +1,11 @@
 module Harser.Combinators (
+    module Control.Applicative,
     (<?>),
     zeroOrOne,
     zeroOrMore,
     oneOrMore,
+    try,
+    exactly,
     option,
     sepBy, sepBy',
     atLeast,
@@ -19,7 +22,8 @@ module Harser.Combinators (
 
 import Control.Applicative (Alternative(..))
 
-import Harser.Parser (Parser(..), ParseState(..), try, runP)
+import Harser.Parser (Parser(..), ParseState(..), runP, satisfy)
+import Harser.Stream (Stream(..))
 
 
 infixl 7 <?>
@@ -40,6 +44,17 @@ zeroOrMore = many
 
 oneOrMore :: Parser s u a -> Parser s u [a]
 oneOrMore = some
+
+
+-- | restores stream to previous state on failure
+try :: Parser s u a -> Parser s u a
+try (Parser f) = Parser (\s -> case f s of
+    (_, Failure e)  -> (s, Failure e)
+    (s', Success x) -> (s', Success x))
+
+
+exactly :: (Eq t, Stream s t) => t -> Parser s u t
+exactly t = satisfy (== t)
 
 
 -- | takes a parser and an default value. upon failure,
@@ -71,8 +86,8 @@ atLeast n p = do
     -- im sure there is an easier way, but it
     -- would look as bad as atMost
     firsts <- count n p
-    rest <- zeroOrMore p
-    return (firsts ++ rest)
+    rest' <- zeroOrMore p -- apostrophe bc shadow from Stream
+    return (firsts ++ rest')
 
 
 atMost :: Int -> Parser s u a -> Parser s u [a]
