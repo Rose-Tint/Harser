@@ -1,5 +1,9 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-missing-fields   #-}
+
 module Harser.Testing (
     ParserTest(..),
+    statelessTest,
     parserTest,
     parserTestFail,
     parserTestState,
@@ -10,12 +14,16 @@ import Harser.Parser (Parser(..), State(..), ParseState(..), runP)
 
 
 data ParserTest s u a = ParserTest {
-    parser    :: !(Parser s u a),
-    stream    :: !s,
-    initState :: !u,
-    expState  :: !u,
-    expResult :: !a
+    parser    :: Parser s u a,
+    stream    :: s,
+    initState :: u,
+    expState  :: u,
+    expResult :: a
 }
+
+
+statelessTest :: ParserTest s () a
+statelessTest = ParserTest { initState = (), expState = () }
 
 
 parserTest :: (Eq u, Eq a) => ParserTest s u a -> Bool

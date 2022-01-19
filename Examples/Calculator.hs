@@ -2,11 +2,8 @@
 
 module Examples.Calculator where
 
-import Prelude hiding (getLine)
-
-import Control.Applicative ()
-import System.IO
-import System.Exit
+import System.IO (hFlush, hSetEcho, stdout, stdin)
+import System.Exit (exitSuccess)
 
 import Harser.Char
 import Harser.Combinators
