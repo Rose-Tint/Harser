@@ -41,9 +41,9 @@ num = (fmap (Num . read) (oneOrMore digit))
 oper :: Parser String () Expr
 oper = do
     x <- term
-    _ <- skipsp
+    _ <- skipws
     op <- oneOf "+-*"
-    _ <- skipsp
+    _ <- skipws
     y <- oper <?> term
     return $ case op of
         '+' -> Add [x, y]
@@ -55,7 +55,7 @@ oper = do
 parens :: Parser String () Expr
 parens = do
     _ <- char '('
-    e <- wrap skipsp expr 
+    e <- wrap skipws expr 
     _ <- char ')'
     return e
 

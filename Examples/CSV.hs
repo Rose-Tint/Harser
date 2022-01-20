@@ -20,7 +20,7 @@ line = zeroOrMore cell
 
 
 cell :: Parser Text () String
-cell = wrap skipsp (zeroOrMore (noneOf ",\n") <* oneOf ",\n")
+cell = wrap skipws (zeroOrMore (noneOf ",\n") <* oneOf ",\n")
 
 
 main :: IO ()

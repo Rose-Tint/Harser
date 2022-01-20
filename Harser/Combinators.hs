@@ -1,5 +1,5 @@
 module Harser.Combinators (
-    module Control.Applicative,
+    Alternative(..),
     (<?>),
     zeroOrOne,
     zeroOrMore,
@@ -22,14 +22,16 @@ module Harser.Combinators (
 
 import Control.Applicative (Alternative(..))
 
-import Harser.Parser (Parser(..), ParseState(..), runP, satisfy)
+import Harser.Parser (Parser(..), ParseState(..), satisfy)
 import Harser.Stream (Stream(..))
 
 
-infixl 7 <?>
--- | like <|>, but "try"s the left parser
+infixr 7 <?>
+-- | like <|>, but with backtracking
 (<?>) :: Parser s u a -> Parser s u a -> Parser s u a
-lp <?> rp = try lp <|> rp
+(Parser lf) <?> (Parser rf) = Parser (\s -> case lf s of
+        (_, Failure _) -> rf s
+        (s', Success x) -> (s', Success x))
 
 
 zeroOrOne :: Parser s u a -> Parser s u (Maybe a)
@@ -117,24 +119,16 @@ skip (Parser a) = Parser (\s -> case a s of
 
 -- | 0+
 skips :: Parser s u a -> Parser s u ()
-skips p@(Parser a) = Parser (\s -> case a s of
-    (s', Failure _) -> (s', Success ())
-    (s', Success _) -> runP (skips p) s')
+skips p = zeroOrMore p >> return ()
 
 
 -- | 1+
 skips' :: Parser s u a -> Parser s u ()
-skips' p@(Parser a) = Parser (\s -> case a s of
-    (s', Failure e) -> (s', Failure e)
-    (s', Success _) -> runP (skips p) s')
+skips' p = oneOrMore p >> return ()
 
 
 skipn :: Int -> Parser s u a -> Parser s u ()
-skipn 0 (Parser a) = Parser (\s ->
-    let (s', _) = a s in (s', Success ()))
-skipn n p@(Parser a) = Parser (\s -> case a s of
-    (_, Failure _) -> (s, Success ())
-    (_, Success _) -> runP (skipn (n - 1) p) s)
+skipn n p = count n p >> return ()
 
 
 choose :: (Foldable l) => l (Parser s u a) -> Parser s u a
@@ -164,3 +158,6 @@ wrap s p = s *> p <* s
 
 between :: Parser s u a -> Parser s u b -> Parser s u c -> Parser s u b
 between ls p rs = ls *> p <* rs
+
+
+

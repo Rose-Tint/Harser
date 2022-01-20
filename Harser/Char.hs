@@ -14,20 +14,19 @@ module Harser.Char (
     oct,
     digit,
     hex,
-    skipsp,
+    skipws,
     spaces,
-    float,
 ) where
 
 import Data.Char (isSpace, isSymbol, isAlpha, isAlphaNum)
 
-import Harser.Combinators (oneOrMore, skips, skips')
-import Harser.Parser (Parser(..), satisfy)
+import Harser.Combinators (skips, skips')
+import Harser.Parser (Parser(..), satisfy, (<!>), (!>))
 import Harser.Stream (Stream(..))
 
 
 char :: (Stream s Char) => Char -> Parser s u Char
-char c = satisfy (== c)
+char c = satisfy (== c) !> [':',' ', c]
 
 
 string :: (Stream s Char) => String -> Parser s u String
@@ -36,11 +35,11 @@ string (c:cs) = (:) <$> char c <*> string cs
 
 
 oneOf :: (Stream s Char) => [Char] -> Parser s u Char
-oneOf cs = satisfy (`elem` cs)
+oneOf cs = satisfy (`elem` cs) <!> ("not one of " ++ cs)
 
 
 noneOf :: (Stream s Char) => [Char] -> Parser s u Char
-noneOf cs = satisfy (\c -> not (elem c cs))
+noneOf cs = satisfy (not . (`elem` cs)) <!> ("is one of " ++ cs)
 
 
 anyChar :: (Stream s Char) => Parser s u Char
@@ -48,7 +47,7 @@ anyChar = satisfy (\_ -> True)
 
 
 space :: (Stream s Char) => Parser s u Char
-space = satisfy isSpace
+space = satisfy isSpace !> " [isSpace]"
 
 
 newline :: (Stream s Char) => Parser s u Char
@@ -56,40 +55,32 @@ newline = satisfy (== '\n')
 
 
 symbol :: (Stream s Char) => Parser s u Char
-symbol = satisfy isSymbol
+symbol = satisfy isSymbol !> " [isSymbol]"
 
 
 letter :: (Stream s Char) => Parser s u Char
-letter = satisfy isAlpha
+letter = satisfy isAlpha !> " [isAlpha]"
 
 
 alnum :: (Stream s Char) => Parser s u Char
-alnum = satisfy isAlphaNum
+alnum = satisfy isAlphaNum !> " [isAlphaNum]"
 
 
 oct :: (Stream s Char) => Parser s u Char
-oct = oneOf "01234567"
+oct = oneOf "01234567" !> "was  [digit]"
 
 
 digit :: (Stream s Char) => Parser s u Char
-digit = oneOf "0123456789"
+digit = oneOf "0123456789" <!> "was not a digit"
 
 
 hex :: (Stream s Char) => Parser s u Char
-hex = oneOf "0123456789abcdef"
+hex = oneOf "0123456789abcdef" <!> "was not a hex digit"
 
 
-skipsp :: (Stream s Char) => Parser s u ()
-skipsp = skips space
+skipws :: (Stream s Char) => Parser s u ()
+skipws = skips space
 
 
 spaces :: (Stream s Char) => Parser s u ()
 spaces = skips' space
-
-
-float :: (Stream s Char) => Parser s u String
-float = do
-    whole <- oneOrMore digit
-    dot <- char '.'
-    dec <- oneOrMore digit
-    return (whole ++ (dot:dec))
