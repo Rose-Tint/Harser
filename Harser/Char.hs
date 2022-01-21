@@ -21,12 +21,12 @@ module Harser.Char (
 import Data.Char (isSpace, isSymbol, isAlpha, isAlphaNum)
 
 import Harser.Combinators (skips, skips')
-import Harser.Parser (Parser(..), satisfy, (<!>), (!>))
+import Harser.Parser (Parser(..), satisfy, (!>))
 import Harser.Stream (Stream(..))
 
 
 char :: (Stream s Char) => Char -> Parser s u Char
-char c = satisfy (== c) !> [':',' ', c]
+char c = satisfy (== c) !> ['\'',c,'\'']
 
 
 string :: (Stream s Char) => String -> Parser s u String
@@ -35,11 +35,11 @@ string (c:cs) = (:) <$> char c <*> string cs
 
 
 oneOf :: (Stream s Char) => [Char] -> Parser s u Char
-oneOf cs = satisfy (`elem` cs) <!> ("not one of " ++ cs)
+oneOf cs = satisfy (`elem` cs) !> (" | not one of " ++ cs)
 
 
 noneOf :: (Stream s Char) => [Char] -> Parser s u Char
-noneOf cs = satisfy (not . (`elem` cs)) <!> ("is one of " ++ cs)
+noneOf cs = satisfy (not . (`elem` cs)) !> ("| is one of " ++ cs)
 
 
 anyChar :: (Stream s Char) => Parser s u Char
@@ -71,11 +71,11 @@ oct = oneOf "01234567" !> "was  [digit]"
 
 
 digit :: (Stream s Char) => Parser s u Char
-digit = oneOf "0123456789" <!> "was not a digit"
+digit = oneOf "0123456789" !> " | not a digit"
 
 
 hex :: (Stream s Char) => Parser s u Char
-hex = oneOf "0123456789abcdef" <!> "was not a hex digit"
+hex = oneOf "0123456789abcdef" !> " | not a hex digit"
 
 
 skipws :: (Stream s Char) => Parser s u ()

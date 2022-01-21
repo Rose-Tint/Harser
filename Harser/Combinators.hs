@@ -26,7 +26,7 @@ import Harser.Parser (Parser(..), ParseState(..), satisfy)
 import Harser.Stream (Stream(..))
 
 
-infixr 7 <?>
+infixr 1 <?>
 -- | like <|>, but with backtracking
 (<?>) :: Parser s u a -> Parser s u a -> Parser s u a
 (Parser lf) <?> (Parser rf) = Parser (\s -> case lf s of
