@@ -26,20 +26,21 @@ import Harser.Stream (Stream(..))
 
 
 char :: (Stream s Char) => Char -> Parser s u Char
-char c = satisfy (== c) !> ['\'',c,'\'']
+char c = satisfy (== c) !> " | char " ++ [c]
 
 
 string :: (Stream s Char) => String -> Parser s u String
 string [] = return []
-string (c:cs) = (:) <$> char c <*> string cs
+string (c:cs) = (:) <$> char c <*> string cs !> " | string"
 
 
 oneOf :: (Stream s Char) => [Char] -> Parser s u Char
-oneOf cs = satisfy (`elem` cs) !> (" | not one of " ++ cs)
+oneOf cs = satisfy (`elem` cs) !> (" | oneOf " ++ cs)
 
 
 noneOf :: (Stream s Char) => [Char] -> Parser s u Char
-noneOf cs = satisfy (not . (`elem` cs)) !> ("| is one of " ++ cs)
+noneOf cs = satisfy (not . (`elem` cs))
+    !> (" | noneOf " ++ cs)
 
 
 anyChar :: (Stream s Char) => Parser s u Char
@@ -47,35 +48,35 @@ anyChar = satisfy (\_ -> True)
 
 
 space :: (Stream s Char) => Parser s u Char
-space = satisfy isSpace !> " [isSpace]"
+space = satisfy isSpace !> " | space"
 
 
 newline :: (Stream s Char) => Parser s u Char
-newline = satisfy (== '\n')
+newline = satisfy (== '\n') !> " | newline"
 
 
 symbol :: (Stream s Char) => Parser s u Char
-symbol = satisfy isSymbol !> " [isSymbol]"
+symbol = satisfy isSymbol !> " | symbol"
 
 
 letter :: (Stream s Char) => Parser s u Char
-letter = satisfy isAlpha !> " [isAlpha]"
+letter = satisfy isAlpha !> " | letter"
 
 
 alnum :: (Stream s Char) => Parser s u Char
-alnum = satisfy isAlphaNum !> " [isAlphaNum]"
+alnum = satisfy isAlphaNum !> " | alnum"
 
 
 oct :: (Stream s Char) => Parser s u Char
-oct = oneOf "01234567" !> "was  [digit]"
+oct = oneOf "01234567" !> " | oct"
 
 
 digit :: (Stream s Char) => Parser s u Char
-digit = oneOf "0123456789" !> " | not a digit"
+digit = oneOf "0123456789" !> " | digit"
 
 
 hex :: (Stream s Char) => Parser s u Char
-hex = oneOf "0123456789abcdef" !> " | not a hex digit"
+hex = oneOf "0123456789abcdef" !> " | hex"
 
 
 skipws :: (Stream s Char) => Parser s u ()

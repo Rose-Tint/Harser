@@ -3,7 +3,7 @@ module Harser.Parser (
     StreamPos(StreamPos),
     ParseState(..),
     State(State),
-    Parser(..),
+    Parser(Parser),
     runP,
     getStream,
     getState,

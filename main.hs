@@ -8,7 +8,6 @@ import Harser.Testing
 import Harser.Utilities
 
 import Examples.Calculator ()
-import Examples.CSV ()
 import qualified Examples.CalcWithVars (main)
 
 
@@ -48,6 +47,9 @@ combinatorsTests = do
     printTest "zeroOrOne ....... " (parserTest test1_zeroOrOne)
     printTest "zeroOrOne ....... " (parserTest test2_zeroOrOne)
     printTest "oneOrMore ....... " (parserTest test_oneOrMore)
+    printTest "count ........... " (parserTest test_count)
+    printTest "atLeast ......... " (parserTest test_atLeast)
+    printTest "atMost .......... " (parserTest test_atMost)
     printTest "wrap ............ " (parserTest test_wrap)
     printTest "between ......... " (parserTest test_between)
         where
@@ -66,12 +68,23 @@ combinatorsTests = do
                 stream = "abc123",
                 expResult = "abc"
             }
-            -- TODO: sepBy sepBy'
-            -- TODO: atLeast
-            -- TODO: atMost
-            -- TODO: count
-            -- TODO: choose choose'
-            -- TODO: select select'
+            test_count = statelessTest {
+                parser = count 3 (char 'a'),
+                stream = "aaaabc",
+                expResult = "aaa"
+            }
+            test_atLeast = statelessTest {
+                parser = atLeast 3 (char 'a'),
+                stream = "aaaabc",
+                expResult = "aaaa"
+            }
+            test_atMost = statelessTest {
+                parser = atMost 5 (char 'a'),
+                stream = "aaabc",
+                expResult = "aaa"
+            }
+            -- TODO: sepBy
+            -- TODO: sepBy'
             test_wrap = statelessTest {
                 parser = wrap (char ' ') (oneOrMore alnum),
                 stream = " abc 123",

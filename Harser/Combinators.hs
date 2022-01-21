@@ -22,7 +22,7 @@ module Harser.Combinators (
 
 import Control.Applicative (Alternative(..))
 
-import Harser.Parser (Parser(..), ParseState(..), satisfy)
+import Harser.Parser (Parser(..), ParseState(..), satisfy, runP)
 import Harser.Stream (Stream(..))
 
 
@@ -30,7 +30,7 @@ infixr 1 <?>
 -- | like <|>, but with backtracking
 (<?>) :: Parser s u a -> Parser s u a -> Parser s u a
 (Parser lf) <?> (Parser rf) = Parser (\s -> case lf s of
-        (_, Failure _) -> rf s
+        (_, Failure _)  -> rf s
         (s', Success x) -> (s', Success x))
 
 
@@ -69,27 +69,18 @@ option (Parser a) d = Parser (\s -> case a s of
 
 -- | 1+
 sepBy :: Parser s u a -> Parser s u b -> Parser s u [b]
-sepBy s p = fmap (:) p <*> zeroOrMore (s *> p)
-    -- do
-    -- x <- p
-    -- xs <- zeroOrMore (s *> p)
-    -- return (x:xs)
+sepBy s p = (:) <$> p <*> zeroOrMore (s *> p)
 
 
 -- | 0+
 sepBy' :: Parser s u a -> Parser s u b -> Parser s u [b]
-sepBy' s p = sepBy s p <|> pure []
+sepBy' s p = sepBy s p <?> pure []
 
 
 atLeast :: Int -> Parser s u a -> Parser s u [a]
 atLeast 0 p = zeroOrMore p
 atLeast 1 p = oneOrMore p
-atLeast n p = do
-    -- im sure there is an easier way, but it
-    -- would look as bad as atMost
-    firsts <- count n p
-    rest' <- zeroOrMore p -- apostrophe bc shadow from Stream
-    return (firsts ++ rest')
+atLeast n p = (++) <$> (count n p) <*> zeroOrMore p
 
 
 atMost :: Int -> Parser s u a -> Parser s u [a]
@@ -97,18 +88,14 @@ atMost 0 _ = pure []
 atMost 1 p = fmap (:[]) p
 atMost n p@(Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success [])
-    (s', Success x) -> case (unParser nxt) s' of
+    (s', Success x) -> case runP (atMost (n - 1) p) s' of
         (s'', Failure _)  -> (s'', Success [x])
         (s'', Success xs) -> (s'', Success (x:xs)))
-            where nxt = atMost (n - 1) p
 
 
 count :: Int -> Parser s u a -> Parser s u [a]
 count 0 _ = return []
-count n p = do
-    x <- p
-    xs <- count (n - 1) p
-    return (x:xs)
+count n p = (:) <$> p <*> (count (n - 1) p)
 
 
 skip :: Parser s u a -> Parser s u ()
@@ -119,37 +106,38 @@ skip (Parser a) = Parser (\s -> case a s of
 
 -- | 0+
 skips :: Parser s u a -> Parser s u ()
-skips p = zeroOrMore p >> return ()
+skips p = zeroOrMore p >> pure ()
 
 
 -- | 1+
 skips' :: Parser s u a -> Parser s u ()
-skips' p = oneOrMore p >> return ()
+skips' p = oneOrMore p >> pure ()
 
 
 skipn :: Int -> Parser s u a -> Parser s u ()
-skipn n p = count n p >> return ()
+skipn n p = count n p >> pure ()
 
 
-choose :: (Foldable l) => l (Parser s u a) -> Parser s u a
-choose ps = foldr (<|>) empty ps
+choose :: [Parser s u a] -> Parser s u a
+choose [] = fail "choose"
+choose (p:ps) = foldr (<?>) p ps
 
 
--- | like choose, but uses <?> instead of <|>
-choose' :: (Foldable l) => l (Parser s u a) -> Parser s u a
-choose' ps = foldr (<?>) empty ps
+-- | choose without backtracking
+choose' :: [Parser s u a] -> Parser s u a
+choose' [] = fail "choose'"
+choose' (p:ps) = foldr (<|>) p ps
 
 
-select :: (Functor l, Foldable l) =>
-    (a -> Parser s u a) -> l a -> Parser s u a
-select fp l = foldr (<|>) empty as
-    where as = fmap fp l
+select :: (a -> Parser s u a) -> [a] -> Parser s u a
+select _ [] = fail "select"
+select p (x:xs) = foldr (<?>) (p x) (fmap p xs)
 
 
-select' :: (Functor l, Foldable l) =>
-    (a -> Parser s u a) -> l a -> Parser s u a
-select' fp l = foldr (<?>) empty as
-    where as = fmap fp l
+-- | select without backtracking
+select' :: (a -> Parser s u a) -> [a] -> Parser s u a
+select' _ [] = fail "select'"
+select' p (x:xs) = foldr (<|>) (p x) (fmap p xs)
 
 
 wrap :: Parser s u a -> Parser s u b -> Parser s u b
