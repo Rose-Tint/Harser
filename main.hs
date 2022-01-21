@@ -12,6 +12,12 @@ import Examples.CSV ()
 import qualified Examples.CalcWithVars (main)
 
 
+main :: IO ()
+main = do
+    tests; putStrLn $ replicate 30 '~';
+    Examples.CalcWithVars.main
+
+
 printTest :: String -> Bool -> IO ()
 printTest s b = if b then
         putStrLn $ ('\t':s) ++ "\027[32mPass\027[0m"
@@ -135,9 +141,5 @@ parserTests = do
 
 tests :: IO ()
 tests = putStrLn "Harser.Parser"      >> parserTests
-    >> putStrLn "Harser.Combinators" >> combinatorsTests
-    >> putStrLn "Harser.Utilities"   >> utilitiesTests
-
-
-main :: IO ()
-main = Examples.CalcWithVars.main
+    >>  putStrLn "Harser.Combinators" >> combinatorsTests
+    >>  putStrLn "Harser.Utilities"   >> utilitiesTests

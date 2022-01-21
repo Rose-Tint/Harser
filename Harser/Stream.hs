@@ -9,7 +9,7 @@ import qualified Data.Text as T (Text, uncons)
 
 
 -- | stream type s | token type t
-class Stream s t | s -> t where
+class (Show t) => Stream s t | s -> t where
     uncons :: s -> Maybe (t, s)
     next :: s -> Maybe t
     next = fmap fst . uncons
@@ -17,7 +17,7 @@ class Stream s t | s -> t where
     rest = fmap snd . uncons
 
 
-instance Stream [t] t where
+instance (Show t) => Stream [t] t where
     uncons [] = Nothing
     uncons (t:ts) = Just (t, ts)
 

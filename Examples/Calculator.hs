@@ -68,7 +68,7 @@ main = hSetEcho stdin False >> loop
             if txt == "exit" then
                 exitSuccess
             else
-                case fmap eval (parse expr txt ()) of
+                case eval <$> parse expr txt () of
                     (Failure e) -> putStrLn $ "!>> " ++ e
                     (Success e) -> putStrLn $ "=>> " ++ show e
             loop

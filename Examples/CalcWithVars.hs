@@ -2,6 +2,7 @@ module Examples.CalcWithVars where
 
 import qualified Data.Map as M
 import System.IO
+import System.Exit
 
 import Harser.Char
 import Harser.Combinators
@@ -29,7 +30,7 @@ expr = do
 
 
 num :: Parser' Expr
-num = Num <$> fractional <?> (fromInteger <$> integral)
+num = Num <$> (fractional <?> (fromInteger <$> integral))
 
 
 var :: Parser' Expr
@@ -37,15 +38,13 @@ var = fmap Var letter
 
 
 term :: Parser' Expr
-term = num <?> var
+term = var <?> num
 
 
 assign :: Parser' ()
 assign = do
     c <- letter
-    _ <- zeroOrMore space
-    _ <- char '='
-    _ <- zeroOrMore space
+    _ <- skipws *> char '=' *> skipws
     n <- num
     modifyState (M.insert c (eval M.empty n))
 
@@ -54,10 +53,11 @@ letExpr :: Parser' Expr
 letExpr = do
     _ <- string "let"
     _ <- spaces
-    _ <- sepBy (char ';') assign
+    -- _ <- assign
+    _ <- sepBy (char ';'  <* skipws) assign
     _ <- spaces
     _ <- string "in"
-    oper
+    skipws *> oper
 
 
 oper :: Parser' Expr
@@ -68,7 +68,7 @@ add :: Parser' Expr
 add = do
     le <- term
     _ <- skipws *> char '+' *> skipws
-    ri <- term
+    ri <- oper <?> term
     return $ Add le ri
 
 
@@ -76,7 +76,7 @@ mul :: Parser' Expr
 mul = do
     le <- term
     _ <- skipws *> char '*' *> skipws
-    ri <- term
+    ri <- oper <?> term
     return $ Mul le ri
 
 
@@ -90,11 +90,21 @@ eval m e = case e of
     (Mul le ri) -> (eval m le) * (eval m ri)
 
 
+inlnPrompt :: String -> IO String
+inlnPrompt p = do
+    _ <- putStr p
+    _ <- hFlush stdout
+    getLine
+
+
+-- TODO: associativity is not correct
 main :: IO ()
 main = hSetEcho stdin False >> loop where
     loop = do
-        inp <- putStr "~>>" >> hFlush stdout >> getLine
-        case parse expr inp M.empty of
+        inp <- inlnPrompt "~>>"
+        if inp == "exit" then
+            exitSuccess
+        else case parse expr inp M.empty of
             (Failure e)      -> putStrLn $ "!>> " ++ e
             (Success (m, e)) -> case e of
                 (Var c) -> case M.lookup c m of
