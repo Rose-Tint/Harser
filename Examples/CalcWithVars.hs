@@ -98,16 +98,20 @@ inlnPrompt p = do
 
 -- TODO: associativity is not correct
 run :: IO ()
-run = hSetEcho stdin False >> loop where
-    loop = do
-        inp <- inlnPrompt "~>>"
-        if inp == "exit" then
-            exitSuccess
-        else case parse expr inp M.empty of
-            (Failure e)      -> putStrLn $ "!>> " ++ e
-            (Success (m, e)) -> case e of
+run = hSetEcho stdin False >> (loop M.empty)
+
+
+loop :: Map -> IO ()
+loop mp = inlnPrompt "~>>" >>= (\inp -> case inp of
+    "exit"  -> exitSuccess
+    "stop"  -> return ()
+    "clear" -> loop M.empty
+    _       -> case parse expr inp mp of
+        (Failure e)      -> (putStrLn $ "!>> " ++ e) >> loop mp
+        (Success (m, e)) -> do
+            case e of
                 (Var c) -> case M.lookup c m of
                     (Nothing) -> putStrLn "!>> unknown variable"
                     (Just n)  -> putStrLn $ "=>> " ++ show n
                 _       -> putStrLn $ "=>> " ++ show (eval m e)
-        loop
+            loop m)
