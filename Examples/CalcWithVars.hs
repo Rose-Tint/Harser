@@ -38,7 +38,7 @@ var = fmap Var letter
 
 
 term :: Parser' Expr
-term = var <?> num
+term = var <?> num <?> parens (letExpr <?> oper)
 
 
 assign :: Parser' ()
@@ -53,7 +53,6 @@ letExpr :: Parser' Expr
 letExpr = do
     _ <- string "let"
     _ <- spaces
-    -- _ <- assign
     _ <- sepBy (char ';'  <* skipws) assign
     _ <- spaces
     _ <- string "in"
@@ -98,8 +97,8 @@ inlnPrompt p = do
 
 
 -- TODO: associativity is not correct
-main :: IO ()
-main = hSetEcho stdin False >> loop where
+run :: IO ()
+run = hSetEcho stdin False >> loop where
     loop = do
         inp <- inlnPrompt "~>>"
         if inp == "exit" then

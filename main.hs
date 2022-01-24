@@ -8,13 +8,15 @@ import Harser.Testing
 import Harser.Utilities
 
 import Examples.Calculator ()
-import qualified Examples.CalcWithVars (main)
+import Examples.CalcWithVars (run)
+-- import Examples.SimpleAST ()
 
 
 main :: IO ()
 main = do
-    tests; putStrLn $ replicate 30 '~';
-    Examples.CalcWithVars.main
+    tests;
+    putStrLn $ replicate 30 '~';
+    run;
 
 
 printTest :: String -> Bool -> IO ()
@@ -41,7 +43,6 @@ utilitiesTests = do
             }
             
 
-
 combinatorsTests :: IO ()
 combinatorsTests = do
     printTest "zeroOrOne ....... " (parserTest test1_zeroOrOne)
@@ -50,6 +51,7 @@ combinatorsTests = do
     printTest "count ........... " (parserTest test_count)
     printTest "atLeast ......... " (parserTest test_atLeast)
     printTest "atMost .......... " (parserTest test_atMost)
+    printTest "sepBy .../....... " (parserTest test_sepBy)
     printTest "wrap ............ " (parserTest test_wrap)
     printTest "between ......... " (parserTest test_between)
         where
@@ -83,8 +85,11 @@ combinatorsTests = do
                 stream = "aaabc",
                 expResult = "aaa"
             }
-            -- TODO: sepBy
-            -- TODO: sepBy'
+            test_sepBy = statelessTest {
+                parser = sepBy (char ';') anyChar,
+                stream = "a;b;c",
+                expResult = "abc"
+            }
             test_wrap = statelessTest {
                 parser = wrap (char ' ') (oneOrMore alnum),
                 stream = " abc 123",

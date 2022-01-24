@@ -8,6 +8,10 @@ import Harser.Parser
 import Harser.Stream
 
 
+lexeme :: (Stream s Char) => Parser s u a -> Parser s u a
+lexeme p = p <* spaces
+
+
 fractional :: (Stream s Char, Fractional n, Read n) => Parser s u n
 fractional = do
     whole <- oneOrMore digit
