@@ -9,7 +9,6 @@ import Harser.Utilities
 
 import qualified Examples.Calculator as E1 (run)
 import qualified Examples.CalcWithVars as E2 (run)
-import qualified Examples.SimpleAST as E3 (run)
 
 
 main :: IO ()
