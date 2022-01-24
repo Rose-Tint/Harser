@@ -7,16 +7,20 @@ import Harser.Stream ()
 import Harser.Testing
 import Harser.Utilities
 
-import Examples.Calculator ()
-import Examples.CalcWithVars (run)
-import Examples.SimpleAST ()
+import qualified Examples.Calculator as E1 (run)
+import qualified Examples.CalcWithVars as E2 (run)
+import qualified Examples.SimpleAST as E3 (run)
 
 
 main :: IO ()
 main = do
-    tests;
-    putStrLn $ replicate 30 '~';
-    run;
+    tests
+    putStrLn $ replicate 30 '~'
+    E1.run
+    putStrLn $ replicate 30 '~'
+    E2.run
+    putStrLn $ replicate 30 '~'
+    E3.run
 
 
 printTest :: String -> Bool -> IO ()
@@ -51,7 +55,7 @@ combinatorsTests = do
     printTest "count ........... " (parserTest test_count)
     printTest "atLeast ......... " (parserTest test_atLeast)
     printTest "atMost .......... " (parserTest test_atMost)
-    printTest "sepBy .../....... " (parserTest test_sepBy)
+    printTest "sepBy ........... " (parserTest test_sepBy)
     printTest "wrap ............ " (parserTest test_wrap)
     printTest "between ......... " (parserTest test_between)
         where

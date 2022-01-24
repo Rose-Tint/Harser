@@ -60,15 +60,16 @@ parens = do
     return e
 
 
-main :: IO ()
-main = hSetEcho stdin False >> loop
-    where
-        loop = do
-            txt <- putStr "~>>" >> hFlush stdout >> getLine
-            if txt == "exit" then
-                exitSuccess
-            else
-                case eval <$> parse expr txt () of
-                    (Failure e) -> putStrLn $ "!>> " ++ e
-                    (Success e) -> putStrLn $ "=>> " ++ show e
+run :: IO ()
+run = hSetEcho stdin False >> loop where
+    loop = do
+        txt <- putStr "~>>" >> hFlush stdout >> getLine
+        if txt == "exit" then
+            exitSuccess
+        else if txt == "stop" then
+            return ()
+        else do
+            case eval <$> parse expr txt () of
+                (Failure e) -> putStrLn $ "!>> " ++ e
+                (Success e) -> putStrLn $ "=>> " ++ show e
             loop
