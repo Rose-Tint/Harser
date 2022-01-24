@@ -18,8 +18,6 @@ main = do
     E1.run
     putStrLn $ replicate 30 '~'
     E2.run
-    putStrLn $ replicate 30 '~'
-    E3.run
 
 
 printTest :: String -> Bool -> IO ()
