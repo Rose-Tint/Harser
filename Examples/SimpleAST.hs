@@ -10,161 +10,64 @@ import Harser.Parser
 import Harser.Utilities
 
 
+-- 'Simple' interpreted functional language
+
+
 type Map = M.Map String Expr
 
-
-type Parser' a = Parser T.Text Context a
-
-
-data Type = Str | Int | Flt
+type Parser' a = Parser T.Text Map a
 
 
 data Expr
-    = StrLit String
-    | IntLit Integer
-    | FltLit Double
-    | Variable Type String
-    -- | Lambda Expr
-    | Loop {
-        loopCond :: Expr,
-        loopBody :: [Expr]
+    = Function {
+        fnName :: String,
+        fnRtnType :: String,
+        fnParams :: [(String, String)],
+        fnBody :: Expr
     }
-    | Branch {
-        branchCond :: Expr,
-        branchBody :: [Expr]
-    }
-    | Assign {
-        varName :: String,
-        asnValue :: Expr
-    }
-    | Print {
-        printVal :: Expr
-    }
-    | FunctionCall {
-        funcName :: String,
-        funcArgs :: [Expr]
+    | IfElse {
+        ieCond :: Expr,
+        iBody  :: Expr,
+        eBody  :: Expr
     }
 
 
-data Context = Context {
-        ctxParams :: [Expr],
-        ctxStack :: [Map]
-    }
-
-
-currStack :: Parser' Map
-currStack = head . ctxStack <$> getState
-
-
-stackPush :: Context -> Context
-stackPush (Context ps st) = Context ps (M.empty:st)
-
-
-alloc :: Expr -> Expr -> Context -> Context
-alloc (Variable t n) e (Context ps stk) =
-    Context ps ((M.insert n (t, e) (head stk)):tail stk)
-alloc _ _ _ = error "cannot add non-var expr to stack"
-
-
-addParam :: Expr -> Context -> Context
-addParam p@(Variable _ _) (Context ps stk) =
-    Context (p:ps) stk
-addParam _ _ = error "cannot add non-var expr as param"
-
-
-strLit :: Parser' Expr
-strLit = StrLit <$> wrap (oneOf "'\"") (zeroOrMore anyChar)
-
-
-intLit :: Parser' Expr
-intLit = IntLit <$> integral
-
-
-fltLit :: Parser' Expr
-fltLit = FltLit <$> fractional
+addFunction :: Expr -> Parser' ()
+addFunction f@(Function nm _ _ _) = modifyState (M.insert nm f)
+addFunction _ = error "non-Function used as arg in addFunction"
 
 
 iden :: Parser' String
-iden = ((:) <$> char '$' <*> oneOrMore alnum)
-        <?> ((:) <$> validFirst <*> alnum)
+iden = (:) <$> letter <*> zeroOrMore (alnum <?> char '_')
+
+
+-- | example:
+-- fn foo: Int <bar: String | baz: Flt> := ...
+function :: Parser' ()
+function = do
+    _ <- lexeme $ string "fn"
+    name <- iden
+    _ <- wrap skipws (char ':')
+    rtn <- iden
+    _ <- skipws
+    ps <- angles (sepBy (wrap skipws (char '|')) param)
+    _ <- wrap skipws (string ":=")
+    bdy <- body
+    addFunction $  Function name rtn ps bdy
         where
-            validFirst = satisfy (\c -> isAlpha c || c == '_')
+            paramDecl = do
+                i <- iden
+                _ <- wrap skipws (char ':')
+                t <- iden
+                return (i, t)
 
 
-varDecl :: Parser' Expr
-varDecl = strDecl <?> fltDecl <?> intDecl
-    where
-        strDecl = do
-            _ <- lexeme $ string "String"
-            Variable Str <$> iden
-        fltDecl = do
-            _ <- lexeme $ string "Float"
-            Variable Flt <?> iden
-        intDecl = do
-            _ <- lexeme $ string "Integer"
-            Variable Int <$> iden
-
-
-var :: Parser' Expr
-var = do
-    i <- iden
-    st <- currStack
-    case lookup i st of
-        (Nothing) -> fail "unknown variable"
-        (Just v)  -> return v
-
-
--- Example: (Integer n, String str)<String>{ ... }
--- lambda :: Parser' Expr
--- lambda = while
-    -- params <- parens sepBy' (char ',') varDecl
-    -- _ <- skipws
-    -- rtn <- angles iden
-    -- _ <- braces body
-    -- -- add params to context
-    -- -- ...
-
-
-while :: Parser' Expr
-while = do
-    _ <- string "while"
-    c <- parens term
-    b <- braces body <?> statement
-    return $ Loop c b
-
-
-branch :: Parser' Expr
-branch = do
+ifElse :: Parser' Expr
+ifElse = do
     _ <- string "if"
-    c <- parens term
-    b <- braces body
-    return $ Branch c b
-
-
-assign :: Parser' ()
-assign = do
-    i <- varDecl
-    _ <- skipws
-    _ <- string ":="
-    _ <- skipws
-    v <- term
-    modifyState (alloc i v)
-
-
-term :: Parser' Expr
-term =  strLit
-    <?> intLit
-    <?> fltLit
-    <?> iden
-    -- <?> lambda
-
-
-body :: Parser' [Expr]
-body = zeroOrMore statement
-
-
-statement :: Parser' Expr
-statement = (while
-        <?> branch
-        <?> term)
-        <* char ';'
+    cond <- wrap skipws (parens expr)
+    iBdy <- body
+    _ <- spaces
+    _ <- lexeme $ string "else"
+    eBdy <- body
+    return $ IfElse cond iBdy eBdy

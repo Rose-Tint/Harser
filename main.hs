@@ -9,7 +9,7 @@ import Harser.Utilities
 
 import Examples.Calculator ()
 import Examples.CalcWithVars (run)
--- import Examples.SimpleAST ()
+import Examples.SimpleAST ()
 
 
 main :: IO ()
