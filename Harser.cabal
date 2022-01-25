@@ -1,16 +1,16 @@
-cabal-version:       2.2
+cabal-version: 2.2
 
 
-name:                Harser
-version:             0.2.0.0
-synopsis:            (H)askell P(arser) Framework
-description:         A parsing framework that very closely mimics Text.Parsec
-license:             MIT
-license-file:        LICENSE
-author:              Rose: https://github.com/Xenovia02
-category:            Parsing
-build-type:          Simple
-extra-source-files:  README.md
+name:               Harser
+version:            0.2.0.0
+synopsis:           (H)askell P(arsing) Framework
+license:            MIT
+license-file:       LICENSE
+author:             Rose: https://github.com/Xenovia02
+-- homepage            https://github.com/Xenovia02/Harser
+category:           Parsing
+build-type:         Simple
+extra-source-files: README.md
 
 
 common exts
@@ -37,6 +37,11 @@ common oth-mods
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
+
+
+source-repository head
+    type:     git
+    location: https://github.com/Xenovia02/Harser
 
 
 library

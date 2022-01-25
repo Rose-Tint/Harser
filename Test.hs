@@ -1,5 +1,7 @@
 module Main where
 
+import Text.Printf
+
 import Harser.Char
 import Harser.Combinators
 import Harser.Parser
@@ -17,17 +19,20 @@ main = do
 
 printTest :: (Eq u, Eq a) =>
     String -> ParserTest s u a -> IO ()
-printTest s b = putStrLn $ ('\t':s) ++ (
-    if parserTest b then
-        "\027[32mPass\027[0m"
-    else
-        "\027[31mFail\027[0m")
+printTest s t = printf "\t%s%s%s\n" s
+    (replicate (30 - 8 - 4 - length s) ' ')
+    (testResults t)
+    where
+        testResults t = if parserTest t then           
+                "\027[32mPass\027[0m"
+            else
+                "\027[31mFail\027[0m"
 
 
 utilitiesTests :: IO ()
 utilitiesTests = do
-    printTest "fractional ...... " test_fractional
-    printTest "integral ........ " test_integral
+    printTest "fractional" test_fractional
+    printTest "integral" test_integral
         where
             test_fractional = statelessTest {
                 parser = fractional, 
@@ -43,15 +48,15 @@ utilitiesTests = do
 
 combinatorsTests :: IO ()
 combinatorsTests = do
-    printTest "zeroOrOne ....... " test1_zeroOrOne
-    printTest "zeroOrOne ....... " test2_zeroOrOne
-    printTest "oneOrMore ....... " test_oneOrMore
-    printTest "count ........... " test_count
-    printTest "atLeast ......... " test_atLeast
-    printTest "atMost .......... " test_atMost
-    printTest "splits .......... " test_splits
-    printTest "wrap ............ " test_wrap
-    printTest "between ......... " test_between
+    printTest "zeroOrOne" test1_zeroOrOne
+    printTest "zeroOrOne" test2_zeroOrOne
+    printTest "oneOrMore" test_oneOrMore
+    printTest "count" test_count
+    printTest "atLeast" test_atLeast
+    printTest "atMost" test_atMost
+    printTest "splits" test_splits
+    printTest "wrap" test_wrap
+    printTest "between" test_between
         where
             test1_zeroOrOne = statelessTest {
                 parser = zeroOrOne (string "foo"),
@@ -94,20 +99,20 @@ combinatorsTests = do
                 expResult = "abc"
             }
             test_between = statelessTest {
-                parser = between (char '(') alnum (char ')'),
-                stream = "(a)",
-                expResult = 'a'
+                parser = between (char 'a') alnum (char 'c'),
+                stream = "abc",
+                expResult = 'b'
             }
 
 
 parserTests :: IO ()
 parserTests = do
-    printTest "getStream ....... " test_getStream
-    printTest "getState ........ " test_getState
-    printTest "putState ........ " test_putState
-    printTest "modifyState ..... " test_modifyState
-    printTest "stateChanges .... " test_stateChanges
-    printTest "satisfy ......... " test_satisfy
+    printTest "getStream" test_getStream
+    printTest "getState" test_getState
+    printTest "putState" test_putState
+    printTest "modifyState" test_modifyState
+    printTest "stateChanges" test_stateChanges
+    printTest "satisfy" test_satisfy
         where
             test_getStream = statelessTest {
                 parser = getStream,
