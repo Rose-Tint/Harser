@@ -10,13 +10,13 @@ import Harser.Parser
 import Harser.Utilities
 
 
-type Map = M.Map Char Double
+type Map = M.Map String Double
 
 type Parser' a = Parser String Map a
 
 
 data Expr
-    = Var Char
+    = Var String
     | Num Double
     | Add Expr Expr
     | Mul Expr Expr
@@ -33,8 +33,12 @@ num :: Parser' Expr
 num = Num <$> (fractional <?> (fromInteger <$> integral))
 
 
+iden :: Parser' String
+iden = (:) <$> letter <*> zeroOrMore alnum
+
+
 var :: Parser' Expr
-var = fmap Var letter
+var = fmap Var iden
 
 
 term :: Parser' Expr
@@ -43,7 +47,7 @@ term = var <?> num <?> parens (letExpr <?> oper)
 
 assign :: Parser' ()
 assign = do
-    c <- letter
+    c <- iden
     _ <- skipws *> char '=' *> skipws
     n <- num
     modifyState (M.insert c (eval M.empty n))

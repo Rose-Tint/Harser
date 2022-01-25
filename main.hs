@@ -7,8 +7,8 @@ import Harser.Stream ()
 import Harser.Testing
 import Harser.Utilities
 
-import qualified Examples.Calculator as E1 (run)
-import qualified Examples.CalcWithVars as E2 (run)
+import qualified Examples.CalcWithVars as E1 (run)
+import qualified Examples.Calculator as E2 (run)
 
 
 main :: IO ()
@@ -21,10 +21,11 @@ main = do
 
 
 printTest :: String -> Bool -> IO ()
-printTest s b = if b then
-        putStrLn $ ('\t':s) ++ "\027[32mPass\027[0m"
+printTest s b = putStrLn $ ('\t':s) ++ (
+    if b then
+        "\027[32mPass\027[0m"
     else
-        putStrLn $ ('\t':s) ++ "\027[31mFail\027[0m"
+        "\027[31mFail\027[0m")
 
 
 utilitiesTests :: IO ()
