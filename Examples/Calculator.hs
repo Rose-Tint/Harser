@@ -35,7 +35,7 @@ term = try num <?> parens
 
 
 num :: Parser String () Expr
-num = (fmap (Num . read) (oneOrMore digit))
+num = (Num . read) <$> oneOrMore digit
 
 
 oper :: Parser String () Expr

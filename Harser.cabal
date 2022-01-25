@@ -2,7 +2,7 @@ cabal-version:       2.2
 
 
 name:                Harser
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            (H)askell P(arser) Framework
 description:         A parsing framework that very closely mimics Text.Parsec
 license:             MIT

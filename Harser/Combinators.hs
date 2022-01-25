@@ -7,7 +7,7 @@ module Harser.Combinators (
     try,
     exactly,
     option,
-    sepBy, sepBy',
+    splits, splits',
     atLeast,
     atMost,
     count,
@@ -22,7 +22,7 @@ module Harser.Combinators (
 
 import Control.Applicative (Alternative(..))
 
-import Harser.Parser (Parser(..), ParseState(..), satisfy, runP)
+import Harser.Parser (Parser(..), ParseState(..), fulfill, runP)
 import Harser.Stream (Stream(..))
 
 
@@ -56,7 +56,7 @@ try (Parser f) = Parser (\s -> case f s of
 
 
 exactly :: (Eq t, Stream s t) => t -> Parser s u t
-exactly t = satisfy (== t)
+exactly t = fulfill (== t)
 
 
 -- | takes a parser and an default value. upon failure,
@@ -68,13 +68,13 @@ option (Parser a) d = Parser (\s -> case a s of
 
 
 -- | 1+
-sepBy :: Parser s u a -> Parser s u b -> Parser s u [b]
-sepBy s p = (:) <$> p <*> zeroOrMore (s *> p)
+splits :: Parser s u a -> Parser s u b -> Parser s u [b]
+splits s p = (:) <$> p <*> zeroOrMore (s *> p)
 
 
 -- | 0+
-sepBy' :: Parser s u a -> Parser s u b -> Parser s u [b]
-sepBy' s p = sepBy s p <?> pure []
+splits' :: Parser s u a -> Parser s u b -> Parser s u [b]
+splits' s p = splits s p <?> pure []
 
 
 atLeast :: Int -> Parser s u a -> Parser s u [a]

@@ -15,7 +15,8 @@ main = do
     putStrLn $ replicate 30 '~'
 
 
-printTest :: (Eq u, Eq a) => String -> ParserTest s u a -> IO ()
+printTest :: (Eq u, Eq a) =>
+    String -> ParserTest s u a -> IO ()
 printTest s b = putStrLn $ ('\t':s) ++ (
     if parserTest b then
         "\027[32mPass\027[0m"
@@ -48,7 +49,7 @@ combinatorsTests = do
     printTest "count ........... " test_count
     printTest "atLeast ......... " test_atLeast
     printTest "atMost .......... " test_atMost
-    printTest "sepBy ........... " test_sepBy
+    printTest "splits .......... " test_splits
     printTest "wrap ............ " test_wrap
     printTest "between ......... " test_between
         where
@@ -82,8 +83,8 @@ combinatorsTests = do
                 stream = "aaabc",
                 expResult = "aaa"
             }
-            test_sepBy = statelessTest {
-                parser = sepBy (char ';') anyChar,
+            test_splits = statelessTest {
+                parser = char ';' `splits` anyChar,
                 stream = "a;b;c",
                 expResult = "abc"
             }
@@ -120,14 +121,14 @@ parserTests = do
                 expResult = [1, 2]
             }
             test_putState = ParserTest {
-                parser = putState [1, 2],
+                parser = setState [1, 2],
                 stream = " ",
                 initState = [],
                 expState = [1, 2],
                 expResult = ()
             }
             test_modifyState = ParserTest {
-                parser = modifyState (+1),
+                parser = amendState (+1),
                 stream = " ",
                 initState = 2,
                 expState = 3,
@@ -135,12 +136,12 @@ parserTests = do
             }
             test_stateChanges = ParserTest {
                 parser = do
-                    _ <- putState ['c', 'd', 'e']
+                    _ <- setState ['c', 'd', 'e']
                     b <- char 'b'
-                    _ <- modifyState (b:)
+                    _ <- amendState (b:)
                     a <- char 'a'
                     s <- getState
-                    putState (a:s)
+                    setState (a:s)
                     return b,
                 stream = "ba",
                 initState = "hi",

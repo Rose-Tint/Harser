@@ -7,8 +7,8 @@ module Harser.Parser (
     runP,
     getStream,
     getState,
-    putState,
-    modifyState,
+    setState,
+    amendState,
     getPosition,
     getPosLn,
     getPosCol,
@@ -16,9 +16,8 @@ module Harser.Parser (
     incStateCol,
     incSrcLn,
     incSrcCol,
-    satisfy,
+    fulfill,
     parse,
-    failFrom,
     (<!), (<!>), (!>)
 ) where
 
@@ -33,57 +32,54 @@ type ParseError = String
 
 
 data StreamPos = StreamPos {
-    linePos :: Integer,
-    colPos  :: Integer
+    linePos :: Int,
+    colPos  :: Int
 }
 
 
-data State s u = State {
-    streamPos :: StreamPos,
-    stream    :: s,
-    userState :: !u
-}
+data State s u = State StreamPos s !u
 
 
-data ParseState a = Failure ParseError | Success a
+data ParseState a
+    = Failure ParseError
+    | Success a
     deriving (Show, Eq)
 
 
-newtype Parser s u a = Parser {
-    unParser :: State s u -> (State s u, ParseState a)
-}
+newtype Parser s u a
+    = Parser (State s u -> (State s u, ParseState a))
 
 
 runP :: Parser s u a -> State s u -> (State s u, ParseState a)
-runP p st = (unParser p) st
+runP (Parser a) s = a s
 
 
 getStream :: Parser s u s
-getStream = Parser (\s -> (s, pure (stream s)))
+getStream = Parser (\st@(State _ ss _) -> (st, pure ss))
 
 
 getState :: Parser s u u
-getState = Parser (\s -> (s, pure (userState s)))
+getState = Parser (\st@(State _ _ su) -> (st, pure su))
 
 
-putState :: u -> Parser s u ()
-putState u = Parser (\(State p s _) -> (State p s u, pure ()))
+setState :: u -> Parser s u ()
+setState u = Parser (\(State p s _) -> (State p s u, pure ()))
 
 
-modifyState :: (u -> u) -> Parser s u ()
-modifyState f = Parser (\(State p s u) ->
+amendState :: (u -> u) -> Parser s u ()
+amendState f = Parser (\(State p s u) ->
     (State p s (f u), pure ()))
 
 
 getPosition :: Parser s u StreamPos
-getPosition = Parser (\s ->  (s, pure $ streamPos s))
+getPosition = Parser (\st@(State sp _ _) ->  (st, pure sp))
 
 
-getPosLn :: Parser s u Integer
+getPosLn :: Parser s u Int
 getPosLn = linePos <$> getPosition
 
 
-getPosCol :: Parser s u Integer
+getPosCol :: Parser s u Int
 getPosCol = colPos <$> getPosition
 
 
@@ -106,6 +102,21 @@ incSrcCol (StreamPos ln col) = StreamPos ln (col + 1)
 failFrom :: State s u -> String -> ParseState a
 failFrom (State (StreamPos ln col) _ _) msg =
     Failure $ printf "[L%d:C%d] %s" ln col msg
+
+
+-- | always consumes input when not empty
+fulfill :: (Stream s t) => (t -> Bool) -> Parser s u t
+fulfill f = Parser (\s@(State sp ss su) -> case uncons ss of
+    Nothing      -> (s, failFrom s "empty")
+    Just (t, ts) -> let s' = State (incSrcCol sp) ts su
+        in if f t then
+            (s', Success t)
+        else
+            (s', failFrom s (show t ++ " did not fulfill")))
+
+
+parse :: Parser s u a -> s -> u -> ParseState a
+parse p s u = snd $ runP p (State (StreamPos 0 0) s u)
 
 
 infix 2 <!>
@@ -132,23 +143,8 @@ infix 2 !>
     (s', Success x) -> (s', Success x))
 
 
--- | always consumes input when not empty
-satisfy :: (Stream s t) => (t -> Bool) -> Parser s u t
-satisfy f = Parser (\s@(State sp ss su) -> case uncons ss of
-    Nothing      -> (s, failFrom s "empty")
-    Just (t, ts) -> let s' = State (incSrcCol sp) ts su
-        in if f t then
-            (s', Success t)
-        else
-            (s', failFrom s' (show t ++ " did not satisfy")))
-
-
-parse :: Parser s u a -> s -> u -> ParseState a
-parse p s u = snd $ runP p (State (StreamPos 0 0) s u)
-
-
 instance Functor (Parser s u) where
-    fmap f (Parser a) = Parser (\s -> -- ps is (P)arser (S)tate
+    fmap f (Parser a) = Parser (\s ->
         let (s', ps) = a s in (s', fmap f ps))
 
 

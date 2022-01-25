@@ -38,7 +38,7 @@ iden = (:) <$> letter <*> zeroOrMore alnum
 
 
 var :: Parser' Expr
-var = fmap Var iden
+var = Var <$> iden
 
 
 term :: Parser' Expr
@@ -48,16 +48,15 @@ term = var <?> num <?> parens (letExpr <?> oper)
 assign :: Parser' ()
 assign = do
     c <- iden
-    _ <- skipws *> char '=' *> skipws
+    _ <- wrap skipws (char '=')
     n <- num
-    modifyState (M.insert c (eval M.empty n))
+    amendState (M.insert c (eval M.empty n))
 
 
 letExpr :: Parser' Expr
 letExpr = do
-    _ <- string "let"
-    _ <- spaces
-    _ <- sepBy (char ';'  <* skipws) assign
+    _ <- lexeme $ string "let"
+    _ <- splits (wrap skipws (char ';')) assign
     _ <- spaces
     _ <- string "in"
     skipws *> oper
@@ -70,7 +69,7 @@ oper = add <?> mul
 add :: Parser' Expr
 add = do
     le <- term
-    _ <- skipws *> char '+' *> skipws
+    _ <- wrap skipws (char '+')
     ri <- oper <?> term
     return $ Add le ri
 
@@ -78,7 +77,7 @@ add = do
 mul :: Parser' Expr
 mul = do
     le <- term
-    _ <- skipws *> char '*' *> skipws
+    _ <- wrap skipws (char '*')
     ri <- oper <?> term
     return $ Mul le ri
 
