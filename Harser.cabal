@@ -1,4 +1,4 @@
-cabal-version:       >=1.10
+cabal-version:       2.2
 
 
 name:                Harser
@@ -13,7 +13,24 @@ build-type:          Simple
 extra-source-files:  README.md
 
 
+common exts
+    other-extensions:
+        FlexibleContexts,
+        FunctionalDependencies,
+        FlexibleInstances,
+        FlexibleContexts
+
+
+common deps
+    build-depends:
+        base,
+        text
+
+
 library
+    import:
+        exts,
+        deps
     exposed-modules:
         Harser.Char,
         Harser.Combinators,
@@ -21,15 +38,14 @@ library
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
-    other-modules:
-    build-depends:
-        base,
-        text
     default-language:
         Haskell2010
 
 
 executable Examples
+    import:
+        exts,
+        deps
     main-is:
         Examples.hs
     other-modules:
@@ -41,20 +57,16 @@ executable Examples
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
-    other-extensions:
-        FlexibleContexts,
-        FunctionalDependencies,
-        FlexibleInstances,
-        FlexibleContexts
     build-depends:
-        base,
-        text,
         containers
     default-language:
         Haskell2010
 
 
 executable Test
+    import:
+        exts,
+        deps
     main-is:
         Test.hs
     other-modules:
@@ -69,8 +81,5 @@ executable Test
         FunctionalDependencies,
         FlexibleInstances,
         FlexibleContexts
-    build-depends:
-        base,
-        text
     default-language:
         Haskell2010
