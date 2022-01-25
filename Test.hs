@@ -7,17 +7,12 @@ import Harser.Stream ()
 import Harser.Testing
 import Harser.Utilities
 
-import qualified Examples.CalcWithVars as E1 (run)
-import qualified Examples.Calculator as E2 (run)
-
 
 main :: IO ()
 main = do
+    putStrLn $ replicate 30 '~'
     tests
     putStrLn $ replicate 30 '~'
-    E1.run
-    putStrLn $ replicate 30 '~'
-    E2.run
 
 
 printTest :: String -> Bool -> IO ()

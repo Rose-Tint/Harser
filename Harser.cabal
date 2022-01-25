@@ -1,0 +1,76 @@
+cabal-version:       >=1.10
+
+
+name:                Harser
+version:             0.1.0.0
+synopsis:            (H)askell P(arser) Framework
+description:         A parsing framework that very closely mimics Text.Parsec
+license:             MIT
+license-file:        LICENSE
+author:              Rose: https://github.com/Xenovia02
+category:            Parsing
+build-type:          Simple
+extra-source-files:  README.md
+
+
+library
+    exposed-modules:
+        Harser.Char,
+        Harser.Combinators,
+        Harser.Parser,
+        Harser.Stream,
+        Harser.Testing,
+        Harser.Utilities
+    other-modules:
+    build-depends:
+        base,
+        text
+    default-language:
+        Haskell2010
+
+
+executable Examples
+    main-is:
+        Examples.hs
+    other-modules:
+        Examples.Calculator,
+        Examples.CalcWithVars,
+        Harser.Char,
+        Harser.Combinators,
+        Harser.Parser,
+        Harser.Stream,
+        Harser.Testing,
+        Harser.Utilities
+    other-extensions:
+        FlexibleContexts,
+        FunctionalDependencies,
+        FlexibleInstances,
+        FlexibleContexts
+    build-depends:
+        base,
+        text,
+        containers
+    default-language:
+        Haskell2010
+
+
+executable Test
+    main-is:
+        Test.hs
+    other-modules:
+        Harser.Char,
+        Harser.Combinators,
+        Harser.Parser,
+        Harser.Stream,
+        Harser.Testing,
+        Harser.Utilities
+    other-extensions:
+        FlexibleContexts,
+        FunctionalDependencies,
+        FlexibleInstances,
+        FlexibleContexts
+    build-depends:
+        base,
+        text
+    default-language:
+        Haskell2010
