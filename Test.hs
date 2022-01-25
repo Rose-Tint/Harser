@@ -15,9 +15,9 @@ main = do
     putStrLn $ replicate 30 '~'
 
 
-printTest :: String -> Bool -> IO ()
+printTest :: (Eq u, Eq a) => String -> ParserTest s u a -> IO ()
 printTest s b = putStrLn $ ('\t':s) ++ (
-    if b then
+    if parserTest b then
         "\027[32mPass\027[0m"
     else
         "\027[31mFail\027[0m")
@@ -25,8 +25,8 @@ printTest s b = putStrLn $ ('\t':s) ++ (
 
 utilitiesTests :: IO ()
 utilitiesTests = do
-    printTest "fractional ...... " (parserTest test_fractional)
-    printTest "integral ........ " (parserTest test_integral)
+    printTest "fractional ...... " test_fractional
+    printTest "integral ........ " test_integral
         where
             test_fractional = statelessTest {
                 parser = fractional, 
@@ -42,15 +42,15 @@ utilitiesTests = do
 
 combinatorsTests :: IO ()
 combinatorsTests = do
-    printTest "zeroOrOne ....... " (parserTest test1_zeroOrOne)
-    printTest "zeroOrOne ....... " (parserTest test2_zeroOrOne)
-    printTest "oneOrMore ....... " (parserTest test_oneOrMore)
-    printTest "count ........... " (parserTest test_count)
-    printTest "atLeast ......... " (parserTest test_atLeast)
-    printTest "atMost .......... " (parserTest test_atMost)
-    printTest "sepBy ........... " (parserTest test_sepBy)
-    printTest "wrap ............ " (parserTest test_wrap)
-    printTest "between ......... " (parserTest test_between)
+    printTest "zeroOrOne ....... " test1_zeroOrOne
+    printTest "zeroOrOne ....... " test2_zeroOrOne
+    printTest "oneOrMore ....... " test_oneOrMore
+    printTest "count ........... " test_count
+    printTest "atLeast ......... " test_atLeast
+    printTest "atMost .......... " test_atMost
+    printTest "sepBy ........... " test_sepBy
+    printTest "wrap ............ " test_wrap
+    printTest "between ......... " test_between
         where
             test1_zeroOrOne = statelessTest {
                 parser = zeroOrOne (string "foo"),
@@ -101,12 +101,12 @@ combinatorsTests = do
 
 parserTests :: IO ()
 parserTests = do
-    printTest "getStream ....... " (parserTest test_getStream)
-    printTest "getState ........ " (parserTest test_getState)
-    printTest "putState ........ " (parserTest test_putState)
-    printTest "modifyState ..... " (parserTest test_modifyState)
-    printTest "stateChanges .... " (parserTest test_stateChanges)
-    printTest "satisfy ......... " (parserTest test_satisfy)
+    printTest "getStream ....... " test_getStream
+    printTest "getState ........ " test_getState
+    printTest "putState ........ " test_putState
+    printTest "modifyState ..... " test_modifyState
+    printTest "stateChanges .... " test_stateChanges
+    printTest "satisfy ......... " test_satisfy
         where
             test_getStream = statelessTest {
                 parser = getStream,

@@ -25,6 +25,18 @@ common deps
     build-depends:
         base,
         text
+    default-language:
+        Haskell2010
+
+
+common oth-mods
+    other-modules:
+        Harser.Char,
+        Harser.Combinators,
+        Harser.Parser,
+        Harser.Stream,
+        Harser.Testing,
+        Harser.Utilities
 
 
 library
@@ -38,48 +50,26 @@ library
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
-    default-language:
-        Haskell2010
 
 
 executable Examples
     import:
         exts,
-        deps
+        deps,
+        oth-mods
     main-is:
         Examples.hs
     other-modules:
         Examples.Calculator,
-        Examples.CalcWithVars,
-        Harser.Char,
-        Harser.Combinators,
-        Harser.Parser,
-        Harser.Stream,
-        Harser.Testing,
-        Harser.Utilities
+        Examples.CalcWithVars
     build-depends:
         containers
-    default-language:
-        Haskell2010
 
 
 executable Test
     import:
         exts,
-        deps
+        deps,
+        oth-mods
     main-is:
         Test.hs
-    other-modules:
-        Harser.Char,
-        Harser.Combinators,
-        Harser.Parser,
-        Harser.Stream,
-        Harser.Testing,
-        Harser.Utilities
-    other-extensions:
-        FlexibleContexts,
-        FunctionalDependencies,
-        FlexibleInstances,
-        FlexibleContexts
-    default-language:
-        Haskell2010
