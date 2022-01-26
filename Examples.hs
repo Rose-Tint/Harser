@@ -4,6 +4,7 @@ import System.Exit (exitSuccess)
 
 import qualified Examples.CalcWithVars as E1 (run)
 import qualified Examples.Calculator as E2 (run)
+import Examples.Lang ()
 
 
 main :: IO ()

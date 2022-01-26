@@ -7,7 +7,6 @@ synopsis:           (H)askell P(arsing) Framework
 license:            MIT
 license-file:       LICENSE
 author:             Rose: https://github.com/Xenovia02
--- homepage            https://github.com/Xenovia02/Harser
 category:           Parsing
 build-type:         Simple
 extra-source-files: README.md
@@ -66,7 +65,8 @@ executable Examples
         Examples.hs
     other-modules:
         Examples.Calculator,
-        Examples.CalcWithVars
+        Examples.CalcWithVars,
+        Examples.Lang
     build-depends:
         containers
 
