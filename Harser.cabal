@@ -1,15 +1,19 @@
 cabal-version: 2.2
 
 
+-- package information
 name:               Harser
 version:            0.2.0.0
 synopsis:           (H)askell P(arsing) Framework
-license:            MIT
-license-file:       LICENSE
 author:             Rose: https://github.com/Xenovia02
 category:           Parsing
-build-type:         Simple
+license:            MIT
+license-file:       LICENSE
 extra-source-files: README.md
+
+-- build information
+build-type:         Simple
+jobs:               4
 
 
 common exts
@@ -38,6 +42,13 @@ common oth-mods
         Harser.Utilities
 
 
+common opts
+    ghc-options:
+        -Wall
+        -Werror
+        -Wextra
+
+
 source-repository head
     type:     git
     location: https://github.com/Xenovia02/Harser
@@ -46,7 +57,8 @@ source-repository head
 library
     import:
         exts,
-        deps
+        deps,
+        opts
     exposed-modules:
         Harser.Char,
         Harser.Combinators,
@@ -54,19 +66,25 @@ library
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
+    optimization:
+        True
 
 
 executable Examples
     import:
         exts,
         deps,
-        oth-mods
+        oth-mods,
+        opts
     main-is:
         Examples.hs
     other-modules:
         Examples.Calculator,
         Examples.CalcWithVars,
-        Examples.Lang
+        Examples.Lang.Data
+        Examples.Lang.Grammar
+        Examples.Lang.Lang
+        Examples.Lang.State
     build-depends:
         containers
 
@@ -75,6 +93,7 @@ executable Test
     import:
         exts,
         deps,
-        oth-mods
+        oth-mods,
+        opts
     main-is:
         Test.hs

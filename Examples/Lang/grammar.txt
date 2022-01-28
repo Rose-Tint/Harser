@@ -1,0 +1,40 @@
+GRAMMAR
+
+
+lc-letter   = "a" | "b" | ... | "z"
+
+uc-letter   = "A" | "B" | ... | "Z"
+
+letter      = lc-letter | uc-letter
+
+digit       = "0" | "1" | ... | "9"
+
+int         = digit | ( digit, int )
+
+flt         = int | ( digit, { digit }, ".", digit, { digit } )
+
+str         = """, { * }, """
+
+literal     = int | flt | str
+
+id          = lc-letter, { lc-letter | uc-letter | digit }
+
+type-id     = uc-letter, { lc-letter | uc-letter | digit }
+
+purity      = "pure" | "impure"
+
+param-decl  = id, "<", type-id, ">"
+
+param-list  = param-decl, { "|", param-decl }
+
+function    = purity, id, "::", [ param-list, "=>" ], "<", type-id, ">", ":=", statement
+
+func-call   = id, { term }
+
+statement   = ...
+
+term        = id | literal | "(", (term | oper | func-call), ")"
+
+
+-- example: pure foo<Int> { a<Int> | b<Int> } := add a b
+
