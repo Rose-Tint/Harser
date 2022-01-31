@@ -3,7 +3,7 @@ cabal-version: 2.2
 
 -- package information
 name:               Harser
-version:            0.2.1.0
+version:            0.2.1.1
 synopsis:           (H)askell P(arsing) Framework
 author:             Rose<https://github.com/Xenovia02>
 category:           Parsing

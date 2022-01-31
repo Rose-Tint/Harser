@@ -21,20 +21,36 @@ fractional = do
 
 
 integral :: (Stream s Char, Integral n, Read n) => Parser s u n
-integral = fmap read (oneOrMore digit)
+integral = read <$> oneOrMore digit
 
 
 parens :: (Stream s Char) => Parser s u a -> Parser s u a
-parens p = between (char '(') (wrap skipws p) (char ')')
+parens p = between (char '(') p (char ')')
+
+
+parens' :: (Stream s Char) => Parser s u a -> Parser s u a
+parens' p = between (char '(') (wrap skipws p) (char ')')
 
 
 braces :: (Stream s Char) => Parser s u a -> Parser s u a
-braces p = between (char '{') (wrap skipws p) (char '}')
+braces p = between (char '{') p (char '}')
+
+
+braces' :: (Stream s Char) => Parser s u a -> Parser s u a
+braces' p = between (char '{') (wrap skipws p) (char '}')
 
 
 brackets :: (Stream s Char) => Parser s u a -> Parser s u a
-brackets p = between (char '[') (wrap skipws p) (char ']')
+brackets p = between (char '[') p (char ']')
+
+
+brackets' :: (Stream s Char) => Parser s u a -> Parser s u a
+brackets' p = between (char '[') (wrap skipws p) (char ']')
 
 
 angles :: (Stream s Char) => Parser s u a -> Parser s u a
 angles p = between (char '<') p (char '>')
+
+
+angles' :: (Stream s Char) => Parser s u a -> Parser s u a
+angles' p = between (char '<') (wrap skipws p) (char '>')

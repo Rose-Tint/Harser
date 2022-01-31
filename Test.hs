@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+
 module Main where
 
 import Text.Printf
@@ -21,9 +23,9 @@ printTest :: (Eq u, Eq a) =>
     String -> ParserTest s u a -> IO ()
 printTest s t = printf "\t%s%s%s\n" s
     (replicate (30 - 8 - 4 - length s) ' ')
-    (testResults t)
+    testResults
     where
-        testResults t = if parserTest t then           
+        testResults = if parserTest t then
                 "\027[32mPass\027[0m"
             else
                 "\027[31mFail\027[0m"
