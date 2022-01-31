@@ -14,12 +14,17 @@ import Examples.Lang.Data
 import Examples.Lang.State
 
 
+comment :: Parser' ()
+comment = do
+    _ <- newline
+    choose [
+        string "$$ " >> skipUntil newline,
+        skipBtwn (string "$-") (string "-$")
+        ]
+
+
 space :: Parser' ()
-space = choose [
-        (string "$$ " >> skipUntil newline),
-        (skipBtwn (lexeme $ string "$-") (string "-$")),
-        (skip Harser.Char.space)
-    ]
+space = comment <?> skip Harser.Char.space
 
 
 -- | skips whitespace, inline comments, and block comments
@@ -50,6 +55,14 @@ value = choose [
     ] !> " | value"
 
 
+term :: Parser' Expr
+term = choose [
+        parens term,
+        funcCall,
+        ValueExpr <$> value
+    ]
+
+
 purity :: Parser' Bool
 purity = do
     pStr <- select string ["pure", "impure"]
@@ -60,57 +73,36 @@ purity = do
 
 
 paramList :: Parser' [Var]
-paramList = splits delim param where
-    delim = wrap skipws (char '|')
+paramList = delim `splits` param where
+    delim = wrap skipws (char ',')
     param = do
         nm <- iden
-        tn <- wrap skipws (angles (wrap skipws iden))
+        _ <- wrap skipws (char ':')
+        tn <- iden
         tp <- findType tn
         return $ Par nm tp
 
 
--- | ex: pure sub<Int> { a<Int> | b<Int> } := add a (0 - b)
+-- | ex: pure foo(a: Int, b: Int) => Int := add(a, b)
 funcDef :: Parser' Expr
 funcDef = do
     ip <- lexeme purity
     nm <- iden
     _ <- skipws
-    tn <- angles (wrap skipws iden) !> " | in params"
-    tp <- findType tn
-    _ <- skipws
-    ps <- braces paramList
+    ps <- parens paramList
+    _ <- wrap skipws (string "=>")
+    tn <- iden
     _ <- wrap skipws (string ":=")
-    bd <- funcCall -- (if ip then funcCall else pureFnCall)
-        !> " | in body"
+    bd <- term
+    tp <- findType tn
     _ <- allocFunc nm ps tp bd ip !> " | in allocation"
     return $ FuncDef nm
 
 
-pureFnCall :: Parser' Expr
-pureFnCall = do
-    nm <- iden
-    fn <- findFunc nm
-    if not $ isPure fn then
-        fail " | pureFnCall"
-    else
-        let par_c = length (fnParams fn) in do
-            as <- count par_c getValue
-            return $ FuncCall nm as
-        where
-            getValue = do
-                _ <- skipws >> space
-                v <- iden >>= findVar
-                return $ varValue v
-
-
+-- | ex: add(1, 2)
 funcCall :: Parser' Expr
 funcCall = do
-    nm <- lexeme iden
-    fn <- findFunc nm
-    let par_c = length (fnParams fn)
-    as <- count par_c (value <* space)
+    nm <- iden
+    _ <- skipws
+    as <- parens (wrap skipws (char ',') `splits` value)
     (return $ FuncCall nm as) !> " | funcCall"
-
-
-pureStmnt :: Parser' Expr
-pureStmnt = pureFnCall
