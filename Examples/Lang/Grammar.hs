@@ -74,7 +74,7 @@ paramList = splits delim param where
         return $ Par nm tp
 
 
--- | ex: pure foo<Int> { a<Int> | b<Int> } := add a b
+-- | ex: pure foo<Int> { a<Int> | b<Int> } := add { a | b }
 funcDef :: Parser' Expr
 funcDef = do
     ip <- lexeme purity
@@ -91,11 +91,10 @@ funcDef = do
     return $ FuncDef nm
 
 
+-- | ex: add { 1 | 2 }
 funcCall :: Parser' Expr
 funcCall = do
-    nm <- lexeme iden
-    -- fn <- findFunc nm
-    -- let par_c = length (fnParams fn)
-    as <- zeroOrMore (space *> value) !> " | in args"
-    -- as <- count par_c (value <* space) !> " | in args"
+    nm <- iden
+    _ <- skipws
+    as <- braces (wrap skipws (char '|') `splits` value)
     (return $ FuncCall nm as) !> " | funcCall"
