@@ -22,7 +22,6 @@ import Prelude hiding (fail)
 
 import Control.Applicative (Alternative(..))
 import Control.Monad.Fail (MonadFail(..))
-import Text.Printf (printf)
 
 import Harser.Stream (Stream(..))
 import Harser.State
@@ -75,26 +74,21 @@ getPosCol :: Parser s u Int
 getPosCol = getSrcCol <$> getPosition
 
 
-failFrom :: State s u -> String -> ParseState a
-failFrom (State (StreamPos ln col) _ _) msg =
-    Failure $ printf "[L%d:C%d] %s" ln col msg
-
-
 -- | always consumes input when not empty
 fulfill :: (Stream s t) => (t -> Bool) -> Parser s u t
 fulfill f = Parser (\s@(State sp ss su) -> case uncons ss of
-    Nothing      -> (s, failFrom s " | empty")
+    Nothing      -> (s, fail " | empty")
     Just (t, ts) -> let s' = State (incSrcCol sp) ts su
         in if f t then
             (s', Success t)
         else
-            (s', failFrom s " | fulfill"))
+            (s', fail " | fulfill"))
 
 
 -- | always consumes input when not empty
 pNext :: (Stream s t) => Parser s u ()
 pNext = Parser $ \s@(State _ ss _) -> case uncons ss of
-    Nothing -> (s, failFrom s " | empty")
+    Nothing -> (s, fail " | empty")
     Just _  -> (incCol s, pure ())
 
 
@@ -116,7 +110,7 @@ infix 2 <!>
 -- | replaces the error message
 (<!>) :: Parser s u a -> ParseError -> Parser s u a
 (Parser a) <!> e = Parser (\s -> case a s of
-    (s', Failure _) -> (s', failFrom s' e)
+    (s', Failure _) -> (s', fail  e)
     (s', Success x) -> (s', Success x))
 
 
@@ -163,7 +157,7 @@ instance Applicative ParseState where
 
 
 instance Alternative (Parser s u) where
-    empty = Parser (\s -> (s, failFrom s "empty"))
+    empty = Parser (\s -> (s, fail "empty"))
     Parser lf <|> Parser rf = Parser (\s -> case lf s of
         (s', Failure _) -> rf s'
         (s', Success x) -> (s', Success x))
@@ -202,7 +196,7 @@ instance Monad ParseState where
 
 
 instance MonadFail (Parser s u) where
-    fail e = Parser (\s -> (s, failFrom s e))
+    fail e = Parser (\s -> (s, fail e))
 
 
 instance MonadFail ParseState where
