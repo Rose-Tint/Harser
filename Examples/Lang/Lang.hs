@@ -15,13 +15,6 @@ import Examples.Lang.Grammar
 import Examples.Lang.State
 
 
--- evalExpr :: Expr -> Parser' ()
--- evalExpr e = case e of
---     (FuncCall nm as) -> do
---         fn <- findFunc nm
---         _ <- foldlM
-
-
 lexer :: Parser' AST
 lexer = do
     e <- funcDef <?> funcCall
@@ -109,6 +102,5 @@ loop st = inlnPrompt "~>>" >>= (\inp -> case inp of
             _ <- putStrLn $ "!>> error: " ++ e
             loop $ getStateUser st'
         (_, Success (AST m e)) -> do
-            case e of
-                _       -> putStrLn $ "=>> " ++ show e
+            _ <- putStrLn $ "=>> " ++ show e
             loop m)
