@@ -1,4 +1,5 @@
 module Harser.Parser (
+    MonadFail(..),
     ParseError,
     StreamPos(StreamPos),
     ParseState(..),
@@ -20,6 +21,8 @@ module Harser.Parser (
     parse,
     (<!), (<!>), (!>)
 ) where
+
+import Prelude hiding (fail)
 
 import Control.Applicative (Alternative(..))
 import Control.Monad.Fail (MonadFail(..))
@@ -189,7 +192,7 @@ instance Alternative (Parser s u) where
 
 
 instance Alternative ParseState where
-    empty = Failure "[]"
+    empty = fail "[]"
     le@(Success _) <|> _ = le
     Failure _ <|> ri@(Success _) = ri
     le@(Failure _) <|> _ = le
@@ -209,7 +212,7 @@ instance Monad ParseState where
 
 
 instance MonadFail (Parser s u) where
-    fail e = Parser (\s -> (s, Failure e))
+    fail e = Parser (\s -> (s, failFrom s e))
 
 
 instance MonadFail ParseState where

@@ -14,8 +14,12 @@ module Harser.Combinators (
     skip,
     skips, skips',
     skipn,
+    skipUntil,
+    skipBtwn,
     choose, choose',
     select, select',
+    maybeP,
+    boolP,
     wrap,
     between
 ) where
@@ -101,7 +105,7 @@ count n p = (:) <$> p <*> (count (n - 1) p)
 skip :: Parser s u a -> Parser s u ()
 skip (Parser a) = Parser (\s -> case a s of
     (s', Failure e) -> (s', Failure e)
-    (s', Success _) -> (s', Success ()))
+    (s', Success _) -> (s', pure ()))
 
 
 -- | 0+
@@ -116,6 +120,17 @@ skips' p = oneOrMore p >> pure ()
 
 skipn :: Int -> Parser s u a -> Parser s u ()
 skipn n p = count n p >> pure ()
+
+
+skipUntil :: Parser s u a -> Parser s u ()
+skipUntil p = Parser $ \s -> case runP p s of
+        (s', Failure _) -> (s', pure ())
+        (s', Success _) -> runP (skipUntil p) s'
+
+
+skipBtwn :: Parser s u a -> Parser s u b
+         -> Parser s u ()
+skipBtwn a b = skip a >> skipUntil b
 
 
 choose :: [Parser s u a] -> Parser s u a
@@ -140,11 +155,25 @@ select' _ [] = fail "select'"
 select' p (x:xs) = foldr (<|>) (p x) (fmap p xs)
 
 
+maybeP :: Parser s u a -> Parser s u (Maybe a)
+maybeP p = Parser $ \s -> case runP p s of
+    (s', Success a) -> (s', pure $ Just a)
+    (_, Failure _)  -> (s, pure Nothing)
+
+
+boolP :: Parser s u a -> Parser s u a
+      -> Parser s u b -> Parser s u a
+boolP fp tp bp = Parser $ \s -> case runP bp s of
+    (s', Failure _) -> runP fp s'
+    (s', Success _) -> runP tp s'
+
+
 wrap :: Parser s u a -> Parser s u b -> Parser s u b
 wrap s p = s *> p <* s
 
 
-between :: Parser s u a -> Parser s u b -> Parser s u c -> Parser s u b
+between :: Parser s u a -> Parser s u b
+        -> Parser s u c -> Parser s u b
 between ls p rs = ls *> p <* rs
 
 

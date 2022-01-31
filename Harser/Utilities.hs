@@ -25,15 +25,15 @@ integral = fmap read (oneOrMore digit)
 
 
 parens :: (Stream s Char) => Parser s u a -> Parser s u a
-parens p = between (char '(') p (char ')')
+parens p = between (char '(') (wrap skipws p) (char ')')
 
 
 braces :: (Stream s Char) => Parser s u a -> Parser s u a
-braces p = between (char '{') p (char '}')
+braces p = between (char '{') (wrap skipws p) (char '}')
 
 
 brackets :: (Stream s Char) => Parser s u a -> Parser s u a
-brackets p = between (char '[') p (char ']')
+brackets p = between (char '[') (wrap skipws p) (char ']')
 
 
 angles :: (Stream s Char) => Parser s u a -> Parser s u a
