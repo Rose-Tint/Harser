@@ -13,7 +13,7 @@ extra-source-files: README.md
 
 -- build information
 build-type:         Simple
-jobs:               $ncpu
+-- jobs:               $ncpu
 
 
 common exts
@@ -69,8 +69,8 @@ library
     other-modules:
         Harser.State,
         Harser.Stream
-    optimization:
-        True
+    ghc-options:
+        -O3
 
 
 executable Examples
