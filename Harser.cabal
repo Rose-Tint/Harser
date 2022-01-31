@@ -5,7 +5,7 @@ cabal-version: 2.2
 name:               Harser
 version:            0.2.0.0
 synopsis:           (H)askell P(arsing) Framework
-author:             Rose: https://github.com/Xenovia02
+author:             Rose<https://github.com/Xenovia02>
 category:           Parsing
 license:            MIT
 license-file:       LICENSE
@@ -13,7 +13,7 @@ extra-source-files: README.md
 
 -- build information
 build-type:         Simple
-jobs:               4
+jobs:               $ncpu
 
 
 common exts
@@ -37,6 +37,7 @@ common oth-mods
         Harser.Char,
         Harser.Combinators,
         Harser.Parser,
+        Harser.State,
         Harser.Stream,
         Harser.Testing,
         Harser.Utilities
@@ -63,9 +64,11 @@ library
         Harser.Char,
         Harser.Combinators,
         Harser.Parser,
-        Harser.Stream,
         Harser.Testing,
         Harser.Utilities
+    other-modules:
+        Harser.State,
+        Harser.Stream
     optimization:
         True
 

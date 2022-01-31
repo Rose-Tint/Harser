@@ -87,18 +87,23 @@ run = hSetEcho stdin False >> (loop stdlib)
 
 
 loop :: State -> IO ()
-loop st = inlnPrompt "~>>" >>= (\inp -> case inp of
+loop st = inlnPrompt ">>>" >>= (\inp -> case inp of
     "exit"  -> exitSuccess
     "stop"  -> return ()
     "stack" -> do
         putStrLn $ "?>> " ++ show st
         loop st
     "clear" -> loop stdlib
-    _       -> case parse lexer inp st of
-        (Failure e)      -> do
-            _ <- putStrLn $ "!>> " ++ e
-            loop st
-        (Success (AST m e)) -> do
+    _       -> case parse'' lexer inp st of
+        (st', Failure e)        -> do
+            let col = getStateCol st'
+            _ <- putStr "~>> "
+            _ <- putStr $ replicate (col - 1) '~'
+            _ <- putChar '^'
+            _ <- putStrLn $ replicate (length inp - col - 1) '~'
+            _ <- putStrLn $ "!>> error: " ++ e
+            loop $ getStateUser st'
+        (_, Success (AST m e)) -> do
             case e of
                 _       -> putStrLn $ "=>> " ++ show e
             loop m)

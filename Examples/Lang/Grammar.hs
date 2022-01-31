@@ -86,23 +86,6 @@ funcDef = do
     return $ FuncDef nm
 
 
-pureFnCall :: Parser' Expr
-pureFnCall = do
-    nm <- iden
-    fn <- findFunc nm
-    if not $ isPure fn then
-        fail " | pureFnCall"
-    else
-        let par_c = length (fnParams fn) in do
-            as <- count par_c getValue
-            return $ FuncCall nm as
-        where
-            getValue = do
-                _ <- skipws >> space
-                v <- iden >>= findVar
-                return $ varValue v
-
-
 funcCall :: Parser' Expr
 funcCall = do
     nm <- lexeme iden
@@ -110,7 +93,3 @@ funcCall = do
     let par_c = length (fnParams fn)
     as <- count par_c (value <* space)
     (return $ FuncCall nm as) !> " | funcCall"
-
-
-pureStmnt :: Parser' Expr
-pureStmnt = pureFnCall

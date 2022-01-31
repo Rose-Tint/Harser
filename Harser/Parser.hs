@@ -1,9 +1,7 @@
 module Harser.Parser (
+    module Harser.State,
     MonadFail(..),
-    ParseError,
-    StreamPos(StreamPos),
     ParseState(..),
-    State(State),
     Parser(Parser),
     runP,
     getStream,
@@ -13,12 +11,8 @@ module Harser.Parser (
     getPosition,
     getPosLn,
     getPosCol,
-    incStateLn,
-    incStateCol,
-    incSrcLn,
-    incSrcCol,
     fulfill,
-    parse,
+    parse, parse', parse'',
     (<!), (<!>), (!>)
 ) where
 
@@ -29,18 +23,7 @@ import Control.Monad.Fail (MonadFail(..))
 import Text.Printf (printf)
 
 import Harser.Stream (Stream(..))
-
-
-type ParseError = String
-
-
-data StreamPos = StreamPos {
-    linePos :: Int,
-    colPos  :: Int
-}
-
-
-data State s u = State StreamPos s !u
+import Harser.State
 
 
 data ParseState a
@@ -79,27 +62,11 @@ getPosition = Parser (\st@(State sp _ _) ->  (st, pure sp))
 
 
 getPosLn :: Parser s u Int
-getPosLn = linePos <$> getPosition
+getPosLn = getSrcLn <$> getPosition
 
 
 getPosCol :: Parser s u Int
-getPosCol = colPos <$> getPosition
-
-
-incStateLn :: State s u -> State s u
-incStateLn (State p s u) = State (incSrcLn p) s u
-
-
-incStateCol :: State s u -> State s u
-incStateCol (State p s u) = State (incSrcCol p) s u
-
-
-incSrcLn :: StreamPos -> StreamPos
-incSrcLn (StreamPos ln col) = StreamPos (ln + 1) col
-
-
-incSrcCol :: StreamPos -> StreamPos
-incSrcCol (StreamPos ln col) = StreamPos ln (col + 1)
+getPosCol = getSrcCol <$> getPosition
 
 
 failFrom :: State s u -> String -> ParseState a
@@ -120,6 +87,16 @@ fulfill f = Parser (\s@(State sp ss su) -> case uncons ss of
 
 parse :: Parser s u a -> s -> u -> ParseState a
 parse p s u = snd $ runP p (State (StreamPos 0 0) s u)
+
+
+parse' :: Parser s u a -> s -> u -> (u, ParseState a)
+parse' p s u = (getStateUser st, res)
+    where
+        (st, res) = runP p (State (StreamPos 0 0) s u)
+
+
+parse'' :: Parser s u a -> s -> u -> (State s u, ParseState a)
+parse'' p s u = runP p (State (StreamPos 0 0) s u)
 
 
 infix 2 <!>
