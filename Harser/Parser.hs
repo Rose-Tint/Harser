@@ -5,6 +5,7 @@ module Harser.Parser (
     Parser(Parser),
     runP,
     getStream,
+    fgetState,
     getState,
     setState,
     amendState,
@@ -12,6 +13,7 @@ module Harser.Parser (
     getPosLn,
     getPosCol,
     fulfill,
+    pNext,
     parse, parse', parse'',
     (<!), (<!>), (!>)
 ) where
@@ -42,6 +44,10 @@ runP (Parser a) s = a s
 
 getStream :: Parser s u s
 getStream = Parser (\st@(State _ ss _) -> (st, pure ss))
+
+
+fgetState :: (u -> a) -> Parser s u a
+fgetState f = f <$> getState
 
 
 getState :: Parser s u u
@@ -77,12 +83,19 @@ failFrom (State (StreamPos ln col) _ _) msg =
 -- | always consumes input when not empty
 fulfill :: (Stream s t) => (t -> Bool) -> Parser s u t
 fulfill f = Parser (\s@(State sp ss su) -> case uncons ss of
-    Nothing      -> (s, failFrom s "empty")
+    Nothing      -> (s, failFrom s " | empty")
     Just (t, ts) -> let s' = State (incSrcCol sp) ts su
         in if f t then
             (s', Success t)
         else
-            (s', failFrom s (show t ++ " did not fulfill")))
+            (s', failFrom s " | fulfill"))
+
+
+-- | always consumes input when not empty
+pNext :: (Stream s t) => Parser s u ()
+pNext = Parser $ \s@(State _ ss _) -> case uncons ss of
+    Nothing -> (s, failFrom s " | empty")
+    Just _  -> (incCol s, pure ())
 
 
 parse :: Parser s u a -> s -> u -> ParseState a

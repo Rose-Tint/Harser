@@ -40,3 +40,27 @@ incSrcLn (StreamPos ln col) = StreamPos (ln + 1) col
 
 incSrcCol :: StreamPos -> StreamPos
 incSrcCol (StreamPos ln col) = StreamPos ln (col + 1)
+
+
+class StreamPosAccessor a where
+    getStreamPos :: a -> StreamPos
+    getLinePos :: a -> Int
+    getLinePos a = getLinePos $ getStreamPos a
+    getColPos :: a -> Int
+    getColPos a = getColPos $ getStreamPos a
+    incLine :: a -> a
+    incCol :: a -> a
+
+
+instance StreamPosAccessor StreamPos where
+    getStreamPos = id
+    getLinePos (StreamPos ln _) = ln
+    getColPos (StreamPos _ col) = col
+    incLine (StreamPos ln col) = StreamPos (ln + 1) col
+    incCol (StreamPos ln col) = StreamPos ln (col + 1)
+
+
+instance StreamPosAccessor (State s u) where
+    getStreamPos = getStatePos
+    incLine (State p s u) = State (incLine p) s u
+    incCol (State p s u) = State (incCol p) s u
