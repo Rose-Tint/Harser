@@ -23,16 +23,16 @@ data Type
     | Integer
     | Float
     | FuncType
-    | RecType Record
+    -- | RecType Record
     deriving (Show, Eq)
 
 
-data Record
-    = Record {
-        recName  :: String,
-        recAttrs :: [Var]
-    }
-    deriving (Show)
+-- data Record
+--     = Record {
+--         recName  :: String,
+--         recAttrs :: [Var]
+--     }
+--     deriving (Show)
 
 
 data Function
@@ -63,18 +63,14 @@ data Expr
     | FuncDef {
         fnDefName  :: String
     }
-    deriving (Show)
-
-
-data AST
-    = AST State Expr
+    | ValueExpr Value
     deriving (Show)
 
 
 data State
     = State {
-        stack :: [Map String Var],
-        types :: [Map String Record]
+        stack :: [Map String Var]
+        -- types :: Map String Record
     }
     deriving (Show)
 
@@ -82,8 +78,8 @@ data State
 type Parser' a = Parser String State a
 
 
-instance Eq Record where
-    a == b = recName a == recName b
+-- instance Eq Record where
+--     a == b = recName a == recName b
 
 
 instance Eq Function where

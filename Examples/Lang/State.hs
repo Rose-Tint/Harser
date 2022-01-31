@@ -14,9 +14,9 @@ import Examples.Lang.Data
 
 
 alloc :: Var -> Parser' ()
-alloc v = amendState $ \(State stk ts) -> case stk of
-        []       -> State [singleton (varName v) v] ts
-        (st:sts) -> State ((insert (varName v) v st):sts) ts
+alloc v = amendState $ \(State stk) -> case stk of
+        []       -> State [singleton (varName v) v]
+        (st:sts) -> State ((insert (varName v) v st):sts)
 
 
 allocFunc :: String -> [Var] -> Type
@@ -26,9 +26,9 @@ allocFunc nm ps rtn bd ip = alloc $ Var nm FuncType (
 
 
 free :: Parser' ()
-free = amendState $ \(State stk ts) -> case stk of
-    []      -> State [] ts
-    (_:sts) -> State sts ts
+free = amendState $ \(State stk) -> case stk of
+    []      -> State []
+    (_:sts) -> State sts
 
 
 findVar :: String -> Parser' Var
@@ -40,20 +40,21 @@ findVar nm = (stack <$> getState) >>= helper
             Just v  -> return v
 
 
-findRec :: String -> Parser' Record
-findRec nm = (types <$> getState) >>= helper
-    where
-        helper [] = fail " | findRec"
-        helper (m:ms) = case lookup nm m of
-            Nothing -> helper ms
-            Just r  -> return r
+-- findRec :: String -> Parser' Record
+-- findRec nm = (types <$> getState) >>= helper
+--     where
+--         helper [] = fail " | findRec"
+--         helper (m:ms) = case lookup nm m of
+--             Nothing -> helper ms
+--             Just r  -> return r
 
 
 findType :: String -> Parser' Type
 findType "Int" = return Integer
 findType "Flt" = return Float
 findType "Str" = return String
-findType nm = RecType <$> findRec nm
+findType _     = fail " | findType"
+-- findType nm = RecType <$> findRec nm
 
 
 findFunc :: String -> Parser' Function

@@ -15,11 +15,8 @@ import Examples.Lang.Grammar
 import Examples.Lang.State
 
 
-lexer :: Parser' AST
-lexer = do
-    e <- funcDef <?> funcCall
-    s <- getState
-    return $ AST s e
+lexer :: Parser' Expr
+lexer = funcDef <?> term
 
 
 -- instead of substitution, we can add the arguments
@@ -27,7 +24,7 @@ lexer = do
 -- respective parameter. Then in the function,
 -- the parameters just get their value from the
 -- stack.
-callFunc :: Function -> [Value] -> Parser' ()
+callFunc :: Function -> [Value] -> Parser' Value
 -- there has GOT to be a better way than "foldM ()"
 callFunc (Function _ ps _ bd _) as = do 
     foldM setParam () (zip ps as)
@@ -42,11 +39,12 @@ callFunc (Function _ ps _ bd _) as = do
                 alloc $ Var (varName par) (varType par) val
 
 
-runExpr :: Expr -> Parser' ()
+runExpr :: Expr -> Parser' Value
 runExpr (FuncCall nm as) = do
     fn <- findFunc nm
     callFunc fn as !> " | runExpr"
 runExpr (FuncDef _) = fail "| cannot define function here"
+runExpr (ValueExpr v) = return v
 
 
 stdlib :: State
@@ -55,22 +53,26 @@ stdlib = State {
             (func "add"
                 [Par "a" Integer, Par "b" Integer]
                 Integer
-                (FuncCall "" [IntVal 0, IntVal 0]))
-        ]],
-        types = [fromList [
-            rec "Int"
+                (FuncCall "" [VarVal "a", VarVal "b"])),
+            (func "int"
+                [Par "a" Integer]
+                Integer
+                (FuncCall "" [VarVal "a"]))
         ]]
+        -- types = fromList [
+        --     rec "Int"
+        -- ]
     }
         where
-            rec nm = (nm, Record nm [])
+            -- rec nm = (nm, Record nm [])
             func nm ps rtn bd =
                 (nm, Var nm FuncType (FuncVal $
                     Function nm ps rtn bd True))
 
 
 inlnPrompt :: String -> IO String
-inlnPrompt p = do
-    _ <- putStr p
+inlnPrompt s = do
+    _ <- putStr s
     _ <- hFlush stdout
     getLine
 
@@ -101,6 +103,6 @@ loop st = inlnPrompt "~>>" >>= (\inp -> case inp of
             _ <- putStrLn $ replicate (length inp - col - 1) '~'
             _ <- putStrLn $ "!>> error: " ++ e
             loop $ getStateUser st'
-        (_, Success (AST m e)) -> do
+        (st', Success e) -> do
             _ <- putStrLn $ "=>> " ++ show e
-            loop m)
+            loop (getStateUser st'))
