@@ -24,7 +24,7 @@ import Examples.Lang.State
 
 lexer :: Parser' AST
 lexer = do
-    e <- funcCall <?> funcDef
+    e <- funcDef <?> funcCall
     s <- getState
     return $ AST s e
 
@@ -87,17 +87,22 @@ run = hSetEcho stdin False >> (loop stdlib)
 
 
 loop :: State -> IO ()
-loop st = inlnPrompt ">>>" >>= (\inp -> case inp of
+loop st = inlnPrompt "~>>" >>= (\inp -> case inp of
     "exit"  -> exitSuccess
     "stop"  -> return ()
     "stack" -> do
         putStrLn $ "?>> " ++ show st
         loop st
+    "show"  -> do
+        nm <- inlnPrompt " >>"
+        vr <- return $ parse (findVar nm) "" st
+        _ <- putStrLn $ "?>> " ++ show vr
+        loop st
     "clear" -> loop stdlib
     _       -> case parse'' lexer inp st of
         (st', Failure e)        -> do
             let col = getStateCol st'
-            _ <- putStr "~>> "
+            _ <- putStr "*>> "
             _ <- putStr $ replicate (col - 1) '~'
             _ <- putChar '^'
             _ <- putStrLn $ replicate (length inp - col - 1) '~'

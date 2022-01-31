@@ -14,12 +14,17 @@ import Examples.Lang.Data
 import Examples.Lang.State
 
 
+comment :: Parser' ()
+comment = do
+    _ <- newline
+    choose [
+        string "$$ " >> skipUntil newline,
+        skipBtwn (string "$-") (string "-$")
+        ]
+
+
 space :: Parser' ()
-space = choose [
-        (string "$$ " >> skipUntil newline),
-        (skipBtwn (lexeme $ string "$-") (string "-$")),
-        (skip Harser.Char.space)
-    ]
+space = comment <?> skip Harser.Char.space
 
 
 -- | skips whitespace, inline comments, and block comments
@@ -69,7 +74,7 @@ paramList = splits delim param where
         return $ Par nm tp
 
 
--- | ex: pure sub<Int> { a<Int> | b<Int> } := add a (0 - b)
+-- | ex: pure foo<Int> { a<Int> | b<Int> } := add a b
 funcDef :: Parser' Expr
 funcDef = do
     ip <- lexeme purity
@@ -89,7 +94,8 @@ funcDef = do
 funcCall :: Parser' Expr
 funcCall = do
     nm <- lexeme iden
-    fn <- findFunc nm
-    let par_c = length (fnParams fn)
-    as <- count par_c (value <* space)
+    -- fn <- findFunc nm
+    -- let par_c = length (fnParams fn)
+    as <- zeroOrMore (space *> value) !> " | in args"
+    -- as <- count par_c (value <* space) !> " | in args"
     (return $ FuncCall nm as) !> " | funcCall"
