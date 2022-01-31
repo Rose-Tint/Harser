@@ -26,16 +26,14 @@ module Harser.Combinators (
 
 import Control.Applicative (Alternative(..))
 
-import Harser.Parser (Parser(..), ParseState(..), fulfill, runP)
+import Harser.Parser (
+        Parser(..),
+        ParseState(..),
+        fulfill,
+        runP,
+        (<?>)
+    )
 import Harser.Stream (Stream(..))
-
-
-infixr 1 <?>
--- | like <|>, but with backtracking
-(<?>) :: Parser s u a -> Parser s u a -> Parser s u a
-(Parser lf) <?> (Parser rf) = Parser (\s -> case lf s of
-        (_, Failure _)  -> rf s
-        (s', Success x) -> (s', Success x))
 
 
 zeroOrOne :: Parser s u a -> Parser s u (Maybe a)
