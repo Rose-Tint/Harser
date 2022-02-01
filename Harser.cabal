@@ -47,7 +47,9 @@ common opts
     ghc-options:
         -Wall
         -Werror
-        -Wextra
+        -Weverything
+        -fhide-source-paths
+        -freverse-errors
 
 
 source-repository head
