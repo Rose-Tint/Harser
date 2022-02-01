@@ -46,6 +46,10 @@ getStream :: Parser s u s
 getStream = Parser $ \st@(State _ ss _) -> (st, pure ss)
 
 
+setStream :: s -> Parser s u ()
+setStream s = Parser $ \(State p _ u) -> (State p s u, pure ())
+
+
 fgetState :: (u -> a) -> Parser s u a
 fgetState f = f <$> getState
 
@@ -93,16 +97,27 @@ pNext = Parser $ \s@(State _ ss _) -> case uncons ss of
     Just _  -> (incCol s, pure ())
 
 
+-- | @parse p s u@ can be read as "parse @s@ using the parser
+-- | @p@, with state @u@". Returns @Success result@ on success,
+-- | or @Failure msg@ on failure. Use @unlines msg@ to get the
+-- | list of error messages.
 parse :: Parser s u a -> s -> u -> ParseState a
-parse p s u = snd $ runP p (State (StreamPos 0 0) s u)
+parse = snd . parse''
 
 
+-- | same as @parse@, but returns a tuple with the resulting
+-- | user state as the first element, and a the result of
+-- | the parser as the second element (in the same form as
+-- | @parse@).
 parse' :: Parser s u a -> s -> u -> (u, ParseState a)
 parse' p s u = (getStateUser st, res)
     where
         (st, res) = runP p (State (StreamPos 0 0) s u)
 
 
+-- | same as @parse@, but returns the full state, which includes
+-- | the stream, stream position, and user state resulting from
+-- | the parser
 parse'' :: Parser s u a -> s -> u -> (State s u, ParseState a)
 parse'' p s u = runP p (State (StreamPos 0 0) s u)
 
@@ -182,12 +197,6 @@ instance Alternative (Parser s u) where
                 (s'', Failure e) -> (s'', Failure e)
                 (s'', Success as) -> (s'', Success (a:as))
     some p = (:) <$> p <*> many p
-    -- Parser (\s -> case f s of
-    --     (s', Failure e) -> (s', Failure e)
-    --     (s', Success a) -> let (Parser f') = many (Parser f)
-    --         in case f' s' of
-    --             (s'', Failure e)  -> (s'', Failure e)
-    --             (s'', Success as) -> (s'', Success (a:as)))
 
 
 instance Alternative ParseState where
