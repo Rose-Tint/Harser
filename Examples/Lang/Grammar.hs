@@ -2,57 +2,52 @@ module Examples.Lang.Grammar where
 
 import Prelude hiding (lookup, fail)
 
-import Harser.Char hiding (skipws,
-                           space,
-                           spaces)
-import qualified Harser.Char (space)
 import Harser.Combinators
 import Harser.Parser hiding (State)
-import Harser.Utilities hiding (lexeme)
 
 import Examples.Lang.Data
 import Examples.Lang.State
+import Examples.Lang.Lexer
 
 
-comment :: Parser' ()
-comment = do
-    _ <- newline
-    choose [
-        string "$$ " >> skipUntil newline,
-        skipBtwn (string "$-") (string "-$")
-        ]
-
-
-space :: Parser' ()
-space = comment <?> skip Harser.Char.space
-
-
--- | skips whitespace, inline comments, and block comments
-skipws :: Parser' ()
-skipws = zeroOrMore space >> pure ()
-
-
-spaces :: Parser' ()
-spaces = space >> skipws
-
-
-lexeme :: Parser' a -> Parser' a
-lexeme p = (p <* spaces) !> " | lexeme"
-
-
--- | ex: foo
 iden :: Parser' String
-iden = ((:) <$> letter <*> zeroOrMore alnum)
-    !> " | iden"
+iden = getNext >>= \t -> case t of
+    IdenTok i -> return i
+    _         -> fail "iden"
+
+
+asnOper :: Parser' ()
+asnOper = exactly AssignmentTok >> return ()
+
+
+rtnType :: Parser' Type
+rtnType = do
+    _ <- exactly RtnTypeDeclTok
+    tn <- iden
+    tp <- findType tn
+    return tp
+
+
+comma :: Parser' ()
+comma = exactly CommaTok >> return ()
+
+
+colon :: Parser' ()
+colon = exactly ColonTok >> return ()
 
 
 value :: Parser' Value
-value = choose [
-        (IntVal <$> integral),
-        (FltVal <$> fractional),
-        (StrVal <$> wrap (char '"') (zeroOrMore anyChar)),
-        (VarVal <$> iden)
-    ] !> " | value"
+value = getNext >>= \t -> case t of
+        IntTok n    -> return $ IntVal n
+        FloatTok n  -> return $ FltVal n
+        StringTok s -> return $ StrVal s
+        IdenTok i   -> return $ VarVal i
+        _           -> fail "value"
+
+
+parens :: Parser' a -> Parser' a
+parens p = between (exactly LParenTok) p (exactly RParenTok)
+    !> "parens"
 
 
 term :: Parser' Expr
@@ -60,42 +55,36 @@ term = choose [
         parens term,
         funcCall,
         ValueExpr <$> value
-    ]
+    ] !> "term"
 
 
 purity :: Parser' Bool
-purity = do
-    pStr <- select string ["pure", "impure"]
-    case pStr of
-        "pure"   -> return True
-        "impure" -> return False
-        _        -> fail " | purity"
+purity = getNext >>= \t -> case t of
+    KwrdTok Pure   -> return True
+    KwrdTok Impure -> return False
+    _                 -> fail "purity"
 
 
 paramList :: Parser' [Var]
-paramList = delim `splits` param where
-    delim = wrap skipws (char ',')
-    param = do
-        nm <- iden
-        _ <- wrap skipws (char ':')
-        tn <- iden
-        tp <- findType tn
-        return $ Par nm tp
+paramList = comma `splits` param
+    where
+        param = do
+            nm <- iden
+            _ <- colon
+            tp <- findType =<< iden
+            return $ Par nm tp
 
 
 -- | ex: pure foo(a: Int, b: Int) => Int := add(a, b)
 funcDef :: Parser' Expr
 funcDef = do
-    ip <- lexeme purity
+    ip <- purity
     nm <- iden
-    _ <- skipws
     ps <- parens paramList
-    _ <- wrap skipws (string "=>")
-    tn <- iden
-    _ <- wrap skipws (string ":=")
+    tp <- rtnType
+    _ <- asnOper
     bd <- term
-    tp <- findType tn
-    _ <- allocFunc nm ps tp bd ip !> " | in allocation"
+    _ <- allocFunc nm ps tp bd ip !> "in allocation"
     return $ FuncDef nm
 
 
@@ -103,6 +92,5 @@ funcDef = do
 funcCall :: Parser' Expr
 funcCall = do
     nm <- iden
-    _ <- skipws
-    as <- parens (wrap skipws (char ',') `splits` value)
-    (return $ FuncCall nm as) !> " | funcCall"
+    as <- parens $ comma `splits` value
+    return (FuncCall nm as) !> "funcCall"

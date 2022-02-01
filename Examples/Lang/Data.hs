@@ -4,6 +4,8 @@ import Data.Map (Map)
 
 import Harser.Parser (Parser)
 
+import Examples.Lang.Lexer
+
 
 data Var
     = Var {
@@ -75,7 +77,7 @@ data State
     deriving (Show)
 
 
-type Parser' a = Parser String State a
+type Parser' a = Parser [Token] State a
 
 
 -- instance Eq Record where

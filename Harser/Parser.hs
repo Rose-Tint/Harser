@@ -13,7 +13,7 @@ module Harser.Parser (
     getPosLn,
     getPosCol,
     fulfill,
-    pNext,
+    getNext,
     parse, parse', parse'',
     (<?>),
     (<!), (<!>), (!>)
@@ -86,11 +86,11 @@ fulfill f = Parser $ \s@(State sp ss su) -> case uncons ss of
             (s', fail "fulfill")
 
 
--- | always consumes input when not empty
-pNext :: (Stream s t) => Parser s u ()
-pNext = Parser $ \s@(State _ ss _) -> case uncons ss of
-    Nothing -> (s, fail "empty")
-    Just _  -> (incCol s, pure ())
+-- | consumes input when not empty
+getNext :: (Stream s t) => Parser s u t
+getNext = Parser $ \s@(State p ss u) -> case uncons ss of
+    Nothing       -> (s, fail "empty")
+    Just (t, ts)  -> (incCol (State p ts u), pure t)
 
 
 parse :: Parser s u a -> s -> u -> ParseState a

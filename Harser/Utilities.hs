@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Harser.Utilities where
+module Harser.Utilities (
+    lexeme,
+    fractional,
+    integral,
+    parens, parens',
+    braces, braces',
+    brackets, brackets',
+    angles, angles'
+) where
 
 import Harser.Char
 import Harser.Combinators

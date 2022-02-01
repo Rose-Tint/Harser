@@ -47,7 +47,8 @@ common opts
     ghc-options:
         -Wall
         -Werror
-        -Weverything
+        -Wextra
+        -- -Weverything
         -fhide-source-paths
         -freverse-errors
 
@@ -73,6 +74,7 @@ library
         Harser.Stream
     ghc-options:
         -O3
+        -Wmissing-export-lists
 
 
 executable Examples
@@ -90,6 +92,7 @@ executable Examples
         Examples.Lang.Grammar
         Examples.Lang.Lang
         Examples.Lang.State
+        Examples.Lang.Lexer
     build-depends:
         containers
 

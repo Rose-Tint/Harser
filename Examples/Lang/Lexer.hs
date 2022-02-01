@@ -60,6 +60,3 @@ keyword = select string ["pure", "impure"] >>= (\kw ->
 
 ident :: Lexer String
 ident = ((:) <$> letter <*> zeroOrMore alnum) !> "ident"
-
-
-
