@@ -1,4 +1,15 @@
-module Harser.State where
+module Harser.State (
+    ParseError,
+    StreamPos(..),
+    State(..),
+    StreamPosAccessor(..),
+    getStateLn,
+    getStateCol,
+    incStateLn,
+    incStateCol,
+    incSrcLn,
+    incSrcCol
+) where
 
 
 type ParseError = String
