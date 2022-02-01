@@ -8,7 +8,8 @@ module Harser.Stream (
 import qualified Data.Text as T (Text, uncons)
 
 
--- | stream type s | token type t
+-- |@'Stream' s t@ has underlying stream type @s@
+-- and token type @t@
 class (Show t) => Stream s t | s -> t where
     uncons :: s -> Maybe (t, s)
     next :: s -> Maybe t
