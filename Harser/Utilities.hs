@@ -12,6 +12,7 @@ lexeme :: (Stream s Char) => Parser s u a -> Parser s u a
 lexeme p = p <* spaces
 
 
+-- |Parses a number with a decimal point.
 fractional :: (Stream s Char, Fractional n, Read n) => Parser s u n
 fractional = do
     whole <- oneOrMore digit
@@ -20,6 +21,7 @@ fractional = do
     return $ read (whole ++ (dot:dec))
 
 
+-- |Parses a whole number
 integral :: (Stream s Char, Integral n, Read n) => Parser s u n
 integral = read <$> oneOrMore digit
 
