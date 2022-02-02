@@ -2,10 +2,12 @@ cabal-version: 2.2
 
 
 -- package information
-name:               Harser
+name:               harser
 version:            0.1.0.0
 synopsis:           (H)askell P(arsing) Framework
+description:        this is a placeholder description
 author:             Rose<https://github.com/Xenovia02>
+maintainer:         Rose<https://github.com/Xenovia02>
 category:           Parsing
 license:            MIT
 license-file:       LICENSE
@@ -26,7 +28,7 @@ common exts
 
 common deps
     build-depends:
-        base,
+        base == 8.*,
         text
     default-language:
         Haskell2010
@@ -46,7 +48,7 @@ common oth-mods
 common opts
     ghc-options:
         -Wall
-        -Werror
+        -- -Werror
         -Wextra
         -fhide-source-paths
         -freverse-errors
