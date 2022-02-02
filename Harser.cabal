@@ -55,8 +55,10 @@ common opts
 
 
 source-repository head
-    type:     git
-    location: https://github.com/Xenovia02/Harser
+    type:
+        git
+    location:
+        https://github.com/Xenovia02/Harser
 
 
 library
