@@ -5,16 +5,18 @@ module Harser.Parser (
     Parser(Parser),
     runP,
     getStream,
+    setStream,
     fgetState,
     getState,
     setState,
-    amendState,
+    fmapState,
     getPosition,
     getPosLn,
     getPosCol,
-    fulfill,
+    satisfy,
     pNext,
     parse, parse', parse'',
+    joinFails,
     (<?>),
     (<!), (<!>), (!>)
 ) where
@@ -58,6 +60,12 @@ getStream :: Parser s u s
 getStream = Parser $ \st@(State _ ss _) -> (st, pure ss)
 
 
+-- |Sets the current input stream, and returns
+-- the previous.
+setStream :: s -> Parser s u ()
+setStream s = Parser $ \(State p _ u) -> (State p s u, pure ())
+
+
 -- |@fgetState f@ returns the current user state,
 -- applying f only to the return state. Does not
 -- affect the ongoing state.
@@ -71,16 +79,15 @@ getState = Parser $ \st@(State _ _ su) -> (st, pure su)
 
 
 -- |@setState u@ sets the current user state to @u@,
--- disregarding the old state, and returning @()@
+-- returning the previous state.
 setState :: u -> Parser s u ()
 setState u = Parser $ \(State p s _) -> (State p s u, pure ())
 
 
--- |@amendState f@ applies f to the current user
--- state, and returns @()@
-amendState :: (u -> u) -> Parser s u ()
-amendState f = Parser $ \(State p s u) ->
-    (State p s (f u), pure ())
+-- |@fmapState f@ applies f to the current user
+-- state, and returns the new state
+fmapState :: (u -> u) -> Parser s u ()
+fmapState f = Parser $ \(State p s u) -> (State p s (f u), pure ())
 
 
 -- |Returns the current stream position
@@ -104,23 +111,23 @@ getPosCol = getSrcCol <$> getPosition
 -- current stream. Returns the parsed token
 -- if the token satisfies @f@, and fails
 -- otherwise
-fulfill :: (Stream s t) => (t -> Bool) -> Parser s u t
-fulfill f = Parser $ \s@(State sp ss su) -> case uncons ss of
+satisfy :: (Stream s t) => (t -> Bool) -> Parser s u t
+satisfy f = Parser $ \s@(State sp ss su) -> case uncons ss of
     Nothing      -> (s, fail "empty")
-    Just (t, ts) -> let s' = State (incSrcCol sp) ts su
+    Just (t, ts) -> let s' = State (incCol sp) ts su
         in if f t then
             (s', Success t)
         else
-            (s', fail "fulfill")
+            (s', fail "satisfy")
 
 
 -- |Attempts to consume a token from the stream.
 -- Fails if the stream is empty, otherwise
 -- returns @()@
-pNext :: (Stream s t) => Parser s u ()
+pNext :: (Stream s t) => Parser s u t
 pNext = Parser $ \s@(State _ ss _) -> case uncons ss of
-    Nothing -> (s, fail "empty")
-    Just _  -> (incCol s, pure ())
+    Nothing     -> (s, fail "pNext")
+    Just (t, _) -> (incCol s, pure t)
 
 
 -- |@parse p s u@ parses the input stream @s@

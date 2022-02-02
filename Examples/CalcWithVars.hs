@@ -50,7 +50,7 @@ assign = do
     c <- iden
     _ <- wrap skipws (char '=')
     n <- num
-    amendState (M.insert c (eval M.empty n))
+    fmapState (M.insert c (eval M.empty n))
 
 
 letExpr :: Parser' Expr

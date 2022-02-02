@@ -2,13 +2,7 @@ module Harser.State (
     ParseError,
     StreamPos(..),
     State(..),
-    StreamPosAccessor(..),
-    getStateLn,
-    getStateCol,
-    incStateLn,
-    incStateCol,
-    incSrcLn,
-    incSrcCol
+    StreamPosAccessor(..)
 ) where
 
 
@@ -33,36 +27,6 @@ data State s u
         getStateStream :: s,
         getStateUser   :: !u
     }
-
-
-{-# DEPRECATED "Use StreamPosAccessor.getLinePos instead" #-}
-getStateLn :: State s u -> Int
-getStateLn (State p _ _) = getSrcLn p
-
-
-{-# DEPRECATED "Use StreamPosAccessor.getColPos instead" #-}
-getStateCol :: State s u -> Int
-getStateCol (State p _ _) = getSrcCol p
-
-
-{-# DEPRECATED "Use StreamPosAccessor.incLine instead" #-}
-incStateLn :: State s u -> State s u
-incStateLn (State p s u) = State (incSrcLn p) s u
-
-
-{-# DEPRECATED "Use StreamPosAccessor.incCol instead" #-}
-incStateCol :: State s u -> State s u
-incStateCol (State p s u) = State (incSrcCol p) s u
-
-
-{-# DEPRECATED "Use StreamPosAccessor.incLine instead" #-}
-incSrcLn :: StreamPos -> StreamPos
-incSrcLn (StreamPos ln col) = StreamPos (ln + 1) col
-
-
-{-# DEPRECATED "Use StreamPosAccessor.incCol instead" #-}
-incSrcCol :: StreamPos -> StreamPos
-incSrcCol (StreamPos ln col) = StreamPos ln (col + 1)
 
 
 class StreamPosAccessor a where

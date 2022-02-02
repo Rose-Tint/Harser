@@ -8,6 +8,7 @@ module Harser.Combinators (
     exactly,
     option,
     splits, splits',
+    splitn,
     atLeast,
     atMost,
     count,
@@ -29,7 +30,7 @@ import Control.Applicative (Alternative(..))
 import Harser.Parser (
         Parser(..),
         ParseState(..),
-        fulfill,
+        satisfy,
         runP,
         (<?>)
     )
@@ -58,10 +59,10 @@ try (Parser f) = Parser (\s -> case f s of
     (s', Success x) -> (s', Success x))
 
 
--- |@'exactly' t@ is equivalent to @'fulfill'
+-- |@'exactly' t@ is equivalent to @'satisfy'
 -- (== t)@
 exactly :: (Eq t, Stream s t) => t -> Parser s u t
-exactly t = fulfill (== t)
+exactly t = satisfy (== t)
 
 
 -- |Takes a parser and a default value. Upon failure,
@@ -82,6 +83,13 @@ splits s p = (:) <$> p <*> zeroOrMore (s *> p)
 -- |Same as 'splits', but parses zero or more.
 splits' :: Parser s u a -> Parser s u b -> Parser s u [b]
 splits' s p = splits s p <?> pure []
+
+
+-- |@'splitn' n s p@ parses @p@, seperated by @s@
+-- @n@ times
+splitn :: Int -> Parser s u a -> Parser s u b -> Parser s u [b]
+splitn 0 _ _ = pure []
+splitn n s p = (:) <$> p <*> count (n - 1) (s *> p)
 
 
 -- |@'atLeast' n p@ parses @n@ or more instances of
@@ -117,16 +125,16 @@ skip (Parser a) = Parser (\s -> case a s of
     (s', Success _) -> (s', pure ()))
 
 
--- |@'skips' p@ runs p zero or more times, then
--- returns @()@
-skips :: Parser s u a -> Parser s u ()
-skips p = zeroOrMore p >> pure ()
-
-
 -- |@'skips' p@ runs p one or more times, then
 -- returns @()@
+skips :: Parser s u a -> Parser s u ()
+skips p = oneOrMore p >> pure ()
+
+
+-- |@'skips' p@ runs p zero or more times, then
+-- returns @()@
 skips' :: Parser s u a -> Parser s u ()
-skips' p = oneOrMore p >> pure ()
+skips' p = zeroOrMore p >> pure ()
 
 
 -- |@'skipn' n p@ skips exactly @n@ instances of
@@ -146,26 +154,39 @@ skipBtwn :: Parser s u a -> Parser s u b
 skipBtwn a b = skip a >> skipUntil b
 
 
-choose :: [Parser s u a] -> Parser s u a
-choose [] = fail "choose"
-choose (p:ps) = foldr (<?>) p ps
+-- |Returns the result of the first successful parser
+choose :: (Foldable t) => t (Parser s u a) -> Parser s u a
+choose ps = if null ps then
+        fail "choose"
+    else
+        foldl1 (<?>) ps
 
 
--- | choose without backtracking
-choose' :: [Parser s u a] -> Parser s u a
-choose' [] = fail "choose'"
-choose' (p:ps) = foldr (<|>) p ps
+-- |'choose' without backtracking
+choose' :: (Foldable t) => t (Parser s u a) -> Parser s u a
+choose' ps = if null ps then
+        fail "choose"
+    else
+        foldl1 (<|>) ps
 
 
-select :: (a -> Parser s u a) -> [a] -> Parser s u a
-select _ [] = fail "select"
-select p (x:xs) = foldr (<?>) (p x) (fmap p xs)
+-- |@'select' f l@ maps f to l, and then returns the
+-- result of the first successful parser
+select :: (Foldable t, Functor t)
+        => (a -> Parser s u b) -> t a -> Parser s u b
+select f ps = if null ps then
+        fail "choose"
+    else
+        foldl1 (<?>) (fmap f ps)
 
 
--- | select without backtracking
-select' :: (a -> Parser s u a) -> [a] -> Parser s u a
-select' _ [] = fail "select'"
-select' p (x:xs) = foldr (<|>) (p x) (fmap p xs)
+-- |'select' without backtracking
+select' :: (Foldable t, Functor t)
+        => (a -> Parser s u b) -> t a -> Parser s u b
+select' f ps = if null ps then
+        fail "choose"
+    else
+        foldl1 (<|>) (fmap f ps)
 
 
 maybeP :: Parser s u a -> Parser s u (Maybe a)
@@ -181,13 +202,15 @@ boolP fp tp bp = Parser $ \s -> case runP bp s of
     (s', Success _) -> runP tp s'
 
 
+-- |@'wrap' s p@ is effectively the same as @'between'
+-- s p s@
 wrap :: Parser s u a -> Parser s u b -> Parser s u b
 wrap s p = s *> p <* s
 
 
 between :: Parser s u a -> Parser s u b
         -> Parser s u c -> Parser s u b
-between ls p rs = ls *> p <* rs
+between lp p rp = lp *> p <* rp
 
 
 

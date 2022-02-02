@@ -14,7 +14,7 @@ import Examples.Lang.Data
 
 
 alloc :: Var -> Parser' ()
-alloc v = amendState $ \(State stk) -> case stk of
+alloc v = fmapState $ \(State stk) -> case stk of
         []       -> State [singleton (varName v) v]
         (st:sts) -> State ((insert (varName v) v st):sts)
 
@@ -26,7 +26,7 @@ allocFunc nm ps rtn bd ip = alloc $ Var nm FuncType (
 
 
 free :: Parser' ()
-free = amendState $ \(State stk) -> case stk of
+free = fmapState $ \(State stk) -> case stk of
     []      -> State []
     (_:sts) -> State sts
 

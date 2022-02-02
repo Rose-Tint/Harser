@@ -96,7 +96,7 @@ loop st = inlnPrompt "~>>" >>= (\inp -> case inp of
     "clear" -> loop stdlib
     _       -> case parse'' lexer inp st of
         (st', Failure e)        -> do
-            let col = getStateCol st'
+            let col = getColPos st'
             _ <- putStr "*>> "
             _ <- putStr $ replicate (col - 1) '~'
             _ <- putChar '^'

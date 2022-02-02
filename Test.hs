@@ -111,8 +111,8 @@ parserTests :: IO ()
 parserTests = do
     printTest "getStream" test_getStream
     printTest "getState" test_getState
-    printTest "putState" test_putState
-    printTest "modifyState" test_modifyState
+    printTest "setState" test_setState
+    printTest "fmapState" test_fmapState
     printTest "stateChanges" test_stateChanges
     printTest "satisfy" test_satisfy
         where
@@ -127,16 +127,16 @@ parserTests = do
                 expState = [1, 2],
                 expResult = [1, 2]
             }
-            test_putState = ParserTest {
+            test_setState = ParserTest {
                 parser = setState [1, 2],
-                stream = " ",
+                stream = "",
                 initState = [],
                 expState = [1, 2],
                 expResult = ()
             }
-            test_modifyState = ParserTest {
-                parser = amendState (+1),
-                stream = " ",
+            test_fmapState = ParserTest {
+                parser = fmapState (+ 1),
+                stream = "",
                 initState = 2,
                 expState = 3,
                 expResult = ()
@@ -145,10 +145,10 @@ parserTests = do
                 parser = do
                     _ <- setState ['c', 'd', 'e']
                     b <- char 'b'
-                    _ <- amendState (b:)
+                    _ <- fmapState (b:)
                     a <- char 'a'
                     s <- getState
-                    setState (a:s)
+                    _ <- setState (a:s)
                     return b,
                 stream = "ba",
                 initState = "hi",
