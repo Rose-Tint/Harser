@@ -6,6 +6,7 @@ import System.Exit (exitSuccess)
 import qualified Examples.CalcWithVars (run)
 import qualified Examples.Calculator (run)
 import qualified Examples.Lang.Lang (run)
+import qualified Examples.Json (run)
 
 
 runExample :: String -> IO () -> IO ()
@@ -17,7 +18,8 @@ runExample nm r = (putStrLn $ take 30 str) >> r
 
 main :: IO ()
 main = do
-    _ <- runExample "Lang"         Examples.Lang.Lang.run
-    _ <- runExample "CalcWithVars" Examples.CalcWithVars.run
-    _ <- runExample "Calculator"   Examples.Calculator.run
+    _ <- runExample "Json"          Examples.Json.run
+    _ <- runExample "Lang"          Examples.Lang.Lang.run
+    _ <- runExample "CalcWithVars"  Examples.CalcWithVars.run
+    _ <- runExample "Calculator"    Examples.Calculator.run
     exitSuccess
