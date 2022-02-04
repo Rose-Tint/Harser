@@ -1,3 +1,7 @@
+{-|
+Module : Harser.State
+-}
+
 module Harser.State (
     ParseError,
     StreamPos(..),
@@ -6,6 +10,7 @@ module Harser.State (
 ) where
 
 
+-- |@'String'@ type alias for readability purposes.
 type ParseError = String
 
 
@@ -29,6 +34,10 @@ data State s u
     }
 
 
+-- |Class to implement ad-hoc polymorphism for
+-- accessing position elements from different
+-- types of sources. Users should not need to use
+-- this.
 class StreamPosAccessor a where
     -- |Returns the current StreamPos value
     getStreamPos :: a -> StreamPos

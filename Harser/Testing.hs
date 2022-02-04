@@ -1,6 +1,11 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 {-# OPTIONS_GHC -Wno-missing-fields   #-}
 
+{-|
+Module      : Harser.Testing
+Description : Parser testing things
+-}
+
 module Harser.Testing (
     ParserTest(..),
     statelessTest,

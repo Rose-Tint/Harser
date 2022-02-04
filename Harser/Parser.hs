@@ -1,3 +1,8 @@
+{-|
+Module      : Harser.Parser
+Description : Main parsing module
+-}
+
 module Harser.Parser (
     module Harser.State,
     MonadFail(..),

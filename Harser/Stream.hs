@@ -1,6 +1,14 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances      #-}
 
+{-|
+Module      : Harser.Stream
+Description : Stream typeclass
+
+Most users should not need this module; it is only
+available for very uncommon cases.
+-}
+
 module Harser.Stream (
     Stream(..)
 ) where

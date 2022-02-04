@@ -4,8 +4,11 @@ cabal-version: 2.2
 -- package information
 name:               harser
 version:            0.1.0.0
-synopsis:           (H)askell P(arsing) Framework
-description:        this is a placeholder description
+synopsis:           (H)askell P(arser) Framework
+description:        Harser is a monadic parsing framework,
+                    built from scratch, and takes inspiration
+                    from `Text.Parsec`, although Harser is a
+                    little bit lighter weight.
 author:             Rose<https://github.com/Xenovia02>
 maintainer:         Rose<https://github.com/Xenovia02>
 category:           Parsing
@@ -13,11 +16,11 @@ license:            MIT
 license-file:       LICENSE
 extra-source-files: README.md
 
--- build information
+-- package information
 build-type:         Simple
--- jobs:               $ncpu
 
 
+-- COMMONS
 common exts
     other-extensions:
         FlexibleContexts,
@@ -25,14 +28,12 @@ common exts
         FlexibleInstances,
         FlexibleContexts
 
-
 common deps
     build-depends:
-        base == 8.*,
+        base == 4.*,
         text
     default-language:
         Haskell2010
-
 
 common oth-mods
     other-modules:
@@ -44,7 +45,6 @@ common oth-mods
         Harser.Testing,
         Harser.Utilities
 
-
 common opts
     ghc-options:
         -Wall
@@ -53,13 +53,34 @@ common opts
         -fhide-source-paths
         -freverse-errors
 
+common example-stuff
+    import:
+        opts,
+        deps,
+        oth-mods
+    build-depends:
+        containers,
+        harser
 
+common test-stuff
+    import:
+        deps,
+        opts,
+        oth-mods
+    other-modules:
+        Tests.TestTools
+    build-depends:
+        harser
+    ghc-options:
+        -Werror
+
+
+-- LIBRARY
 source-repository head
     type:
         git
     location:
         https://github.com/Xenovia02/Harser
-
 
 library
     import:
@@ -79,30 +100,52 @@ library
         -O3
 
 
-executable Examples
+-- EXAMPLES
+executable Calculator
     import:
-        exts,
-        deps,
-        oth-mods,
-        opts
+        example-stuff
     main-is:
-        Examples.hs
+        Examples/Calculator.hs
+
+executable CalcWithVars
+    import:
+        example-stuff
+    main-is:
+        Examples/Calculator.hs
+
+executable Lang
+    import:
+        example-stuff
+    main-is:
+        Examples/Lang.hs
     other-modules:
-        Examples.Calculator,
-        Examples.CalcWithVars,
         Examples.Lang.Data
         Examples.Lang.Grammar
         Examples.Lang.Lang
         Examples.Lang.State
-    build-depends:
-        containers
 
 
-executable Test
+-- TEST SUITES
+test-suite Combinators
     import:
-        exts,
-        deps,
-        oth-mods,
-        opts
+        test-stuff
+    type:
+        exitcode-stdio-1.0
     main-is:
-        Test.hs
+        Tests/Combinators.hs
+
+test-suite Parser
+    import:
+        test-stuff
+    type:
+        exitcode-stdio-1.0
+    main-is:
+        Tests/Parser.hs
+
+test-suite Utilities
+    import:
+        test-stuff
+    type:
+        exitcode-stdio-1.0
+    main-is:
+        Tests/Utilities.hs

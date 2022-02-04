@@ -1,4 +1,4 @@
-module Examples.CalcWithVars where
+module Main where
 
 import qualified Data.Map as M
 import System.IO
@@ -100,14 +100,13 @@ inlnPrompt p = do
 
 
 -- TODO: associativity is not correct
-run :: IO ()
-run = hSetEcho stdin False >> (loop M.empty)
+main :: IO ()
+main = hSetEcho stdin False >> (loop M.empty)
 
 
 loop :: Map -> IO ()
 loop mp = inlnPrompt "~>>" >>= (\inp -> case inp of
     "exit"  -> exitSuccess
-    "stop"  -> return ()
     "clear" -> loop M.empty
     _       -> case parse expr inp mp of
         (Failure e)      -> (putStrLn $ "!>> " ++ e) >> loop mp

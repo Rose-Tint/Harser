@@ -1,3 +1,11 @@
+{-|
+Module      : Harser.Combinators
+Description : Helpful parser combinators
+
+This module contains many useful and often integral
+parser combinators.
+-}
+
 module Harser.Combinators (
     Alternative(..),
     (<?>),
@@ -37,16 +45,22 @@ import Harser.Parser (
 import Harser.Stream (Stream(..))
 
 
+-- |Returns @'Nothing'@ upon failure, and @'Just' r@
+-- (where @r@ is the parsed result) upon success.
 zeroOrOne :: Parser s u a -> Parser s u (Maybe a)
 zeroOrOne (Parser a) = Parser (\s -> case a s of
     (s', Failure _) -> (s', Success Nothing)
     (s', Success x) -> (s', Success (Just x)))
 
 
+-- |@'zeroOrMore' p@ parses zero or more instances
+-- of @p@
 zeroOrMore :: Parser s u a -> Parser s u [a]
 zeroOrMore = many
 
 
+-- |@'zeroOrMore' p@ parses one or more instances
+-- of @p@
 oneOrMore :: Parser s u a -> Parser s u [a]
 oneOrMore = some
 
@@ -143,14 +157,17 @@ skipn :: Int -> Parser s u a -> Parser s u ()
 skipn n p = count n p >> pure ()
 
 
+-- TODO: use backtracking on failure
+-- |@'skipUntil' p@ runs p until p fails.
 skipUntil :: Parser s u a -> Parser s u ()
 skipUntil p = Parser $ \s -> case runP p s of
         (s', Failure _) -> (s', pure ())
         (s', Success _) -> runP (skipUntil p) s'
 
 
-skipBtwn :: Parser s u a -> Parser s u b
-         -> Parser s u ()
+-- |@'skipBtwn' a b@ parses @a@, and then skips until
+-- @b@ fails.
+skipBtwn :: Parser s u a -> Parser s u b -> Parser s u ()
 skipBtwn a b = skip a >> skipUntil b
 
 
@@ -188,13 +205,18 @@ select' f ps = if null ps then
     else
         foldl1 (<|>) (fmap f ps)
 
-
+-- |
+{-# DEPRECATED maybeP "Use zeroOrOne instead" #-}
 maybeP :: Parser s u a -> Parser s u (Maybe a)
 maybeP p = Parser $ \s -> case runP p s of
     (s', Success a) -> (s', pure $ Just a)
     (_, Failure _)  -> (s, pure Nothing)
 
 
+-- TODO: make variable names clearer
+-- TODO: append failure error message
+-- |@'boolP' fp tp bp@ runs @fp@ if @bp@ fails, and
+-- @tp@ if @bp@ succeeds. ignores the result of @bp@
 boolP :: Parser s u a -> Parser s u a
       -> Parser s u b -> Parser s u a
 boolP fp tp bp = Parser $ \s -> case runP bp s of
@@ -208,6 +230,8 @@ wrap :: Parser s u a -> Parser s u b -> Parser s u b
 wrap s p = s *> p <* s
 
 
+-- |@'between' lp p rp@ skips @lp@, runs @p@, skips
+-- @rp@, and returns the result of @p@.
 between :: Parser s u a -> Parser s u b
         -> Parser s u c -> Parser s u b
 between lp p rp = lp *> p <* rp

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Examples.Calculator where
+module Main where
 
 import System.IO (hFlush, hSetEcho, stdout, stdin)
 import System.Exit (exitSuccess)
@@ -60,14 +60,12 @@ parens = do
     return e
 
 
-run :: IO ()
-run = hSetEcho stdin False >> loop where
+main :: IO ()
+main = hSetEcho stdin False >> loop where
     loop = do
         txt <- putStr "~>>" >> hFlush stdout >> getLine
         if txt == "exit" then
             exitSuccess
-        else if txt == "stop" then
-            return ()
         else do
             case eval <$> parse expr txt () of
                 (Failure e) -> putStrLn $ "!>> " ++ e
