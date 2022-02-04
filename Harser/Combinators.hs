@@ -157,11 +157,10 @@ skipn :: Int -> Parser s u a -> Parser s u ()
 skipn n p = count n p >> pure ()
 
 
--- TODO: use backtracking on failure
 -- |@'skipUntil' p@ runs p until p fails.
 skipUntil :: Parser s u a -> Parser s u ()
 skipUntil p = Parser $ \s -> case runP p s of
-        (s', Failure _) -> (s', pure ())
+        (_, Failure _)  -> (s, pure ())
         (s', Success _) -> runP (skipUntil p) s'
 
 
@@ -205,23 +204,15 @@ select' f ps = if null ps then
     else
         foldl1 (<|>) (fmap f ps)
 
--- |
-{-# DEPRECATED maybeP "Use zeroOrOne instead" #-}
-maybeP :: Parser s u a -> Parser s u (Maybe a)
-maybeP p = Parser $ \s -> case runP p s of
-    (s', Success a) -> (s', pure $ Just a)
-    (_, Failure _)  -> (s, pure Nothing)
 
-
--- TODO: make variable names clearer
--- TODO: append failure error message
 -- |@'boolP' fp tp bp@ runs @fp@ if @bp@ fails, and
 -- @tp@ if @bp@ succeeds. ignores the result of @bp@
 boolP :: Parser s u a -> Parser s u a
       -> Parser s u b -> Parser s u a
-boolP fp tp bp = Parser $ \s -> case runP bp s of
-    (s', Failure _) -> runP fp s'
-    (s', Success _) -> runP tp s'
+boolP falseP trueP testP = Parser $ \s ->
+    case runP testP s of
+        (s', Failure e) -> runP (falseP !> e) s'
+        (s', Success _) -> runP trueP s'
 
 
 -- |@'wrap' s p@ is effectively the same as @'between'
