@@ -21,10 +21,10 @@ main = do
             test_fractional = statelessTest {
                 parser = fractional, 
                 stream = "123.456",
-                expResult = 123.456
+                expResult = 123.456 :: Double
             }
             test_integral = statelessTest {
                 parser = integral,
                 stream = "123456",
-                expResult = 123456
+                expResult = 123456 :: Integer
             }

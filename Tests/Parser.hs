@@ -30,21 +30,21 @@ main = do
             }
             test_getState = ParserTest {
                 parser = getState, stream = " ",
-                initState = [1, 2],
-                expState = [1, 2],
-                expResult = [1, 2]
+                initState = [1, 2] :: [Integer],
+                expState = [1, 2] :: [Integer],
+                expResult = [1, 2] :: [Integer]
             }
             test_setState = ParserTest {
                 parser = setState [1, 2],
                 stream = "",
                 initState = [],
-                expState = [1, 2],
+                expState = [1, 2] :: [Integer],
                 expResult = ()
             }
             test_fmapState = ParserTest {
                 parser = fmapState (+ 1),
                 stream = "",
-                initState = 2,
+                initState = 2 :: Integer,
                 expState = 3,
                 expResult = ()
             }
